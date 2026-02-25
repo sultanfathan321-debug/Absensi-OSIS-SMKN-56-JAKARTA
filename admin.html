@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Sistem Monitoring Terpadu</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; }
+        .tab-active { border-bottom: 3px solid #2563eb; color: #2563eb; }
+        .stats-card { transition: transform 0.2s; }
+        .stats-card:hover { transform: translateY(-5px); }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-7xl mx-auto">
+       <header class="mb-8 flex flex-col items-center text-center gap-4">
+    <div class="flex items-center justify-center gap-8">
+        <img src="Logo MPK rev..png" alt="Logo MPK" class="w-28 h-28 object-contain drop-shadow-lg hover:scale-110 transition-transform">
+        <img src="Logo OSIS rev. (1).png" alt="Logo OSIS" class="w-28 h-28 object-contain drop-shadow-lg hover:scale-110 transition-transform">
+    </div>
+    <div>
+        <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">Admin Dashboard</h1>
+        <p class="text-slate-500 font-medium">Pantau kehadiran, statistik bidang, dan kelola anggota.</p>
+    </div>
+    
+    <div class="flex flex-wrap items-center gap-3">
+        <div class="flex items-center gap-3 bg-white p-2 rounded-2xl shadow-sm border border-slate-200">
+            <span class="text-xs font-bold text-slate-400 pl-2 uppercase">Periode:</span>
+            <select id="filter-bulan" class="p-2 pr-8 border-none outline-none bg-transparent text-sm font-bold text-blue-600 cursor-pointer">
+                <option value="Semua">Semua Bulan</option>
+                <option value="1">Januari</option><option value="2">Februari</option><option value="3">Maret</option>
+                <option value="4">April</option><option value="5">Mei</option><option value="6">Juni</option>
+                <option value="7">Juli</option><option value="8">Agustus</option><option value="9">September</option>
+                <option value="10">Oktober</option><option value="11">November</option><option value="12">Desember</option>
+            </select>
+        </div>
+
+        <button id="btnExcelUnduh" class="flex items-center gap-2 bg-green-50 text-green-600 px-4 py-3 rounded-2xl text-xs font-bold transition-all border border-green-100 hover:bg-green-600 hover:text-white group">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v12m0 0l-3-3m3 3l3-3M3 12a9 9 0 1118 0 9 9 0 01-18 0z" />
+            </svg>
+            Unduh Excel
+        </button>
+
+        <button id="btnHapusMassal" class="flex items-center gap-2 bg-red-50 text-red-600 px-4 py-3 rounded-2xl text-xs font-bold transition-all border border-red-100 hover:bg-red-600 hover:text-white group">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+            Hapus Data Bulan Ini
+        </button>
+    </div>
+</header>
+
+        <div id="stats-container" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8"></div>
+
+        <div class="flex gap-8 mb-6 border-b border-slate-200">
+            <button id="tab-rekap" class="pb-3 font-bold tab-active transition-all text-slate-900">Rekap Aktivitas</button>
+            <button id="tab-individu" class="pb-3 font-bold text-slate-400 transition-all">Statistik Per Orang</button>
+            <button id="tab-kelola" class="pb-3 font-bold text-slate-400 transition-all">Kelola Anggota</button>
+        </div>
+
+        <div id="section-rekap" class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead class="bg-slate-50 text-slate-400 text-[10px] uppercase font-bold tracking-widest">
+                        <tr>
+                            <th class="p-4">Anggota</th>
+                            <th class="p-4">Status & Alasan</th>
+                            <th class="p-4">Waktu & Lokasi</th>
+                            <th class="p-4">Bukti Foto</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rekap-list" class="text-sm divide-y divide-slate-100 italic text-slate-400">
+                        <tr><td colspan="4" class="p-8 text-center">Memuat data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="section-individu" class="hidden bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead class="bg-slate-50 text-slate-500 text-[10px] uppercase font-bold tracking-widest">
+                        <tr>
+                            <th class="p-4">Nama Lengkap</th>
+                            <th class="p-4">Sekbid</th>
+                            <th class="p-4 text-center text-green-600">Hadir</th>
+                            <th class="p-4 text-center text-blue-600">Izin</th>
+                            <th class="p-4 text-center text-red-500">Sakit/Absen</th>
+                            <th class="p-4 text-center bg-slate-100">Total Laporan</th>
+                        </tr>
+                    </thead>
+                    <tbody id="individu-list" class="text-sm divide-y divide-slate-100"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="section-kelola" class="hidden space-y-6">
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
+                <h3 class="font-bold mb-4 text-slate-800 flex items-center gap-2">
+                    <span class="w-2 h-6 bg-blue-600 rounded-full"></span> Tambah Anggota Baru
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <input type="text" id="add-nama" placeholder="Nama Lengkap" class="p-4 bg-slate-50 border-none rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                    <input type="text" id="add-sekbid" placeholder="Sekbid (Media, Humas, dll)" class="p-4 bg-slate-50 border-none rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                    <button id="btnTambah" class="bg-slate-900 text-white font-bold p-4 rounded-2xl hover:bg-slate-800 transition shadow-lg shadow-slate-200">Simpan Anggota</button>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden text-sm">
+                <table class="w-full text-left">
+                    <thead class="bg-slate-50 font-bold text-slate-400 uppercase text-[10px] tracking-widest">
+                        <tr>
+                            <th class="p-4">Nama</th>
+                            <th class="p-4">Sekbid</th>
+                            <th class="p-4 text-center">Opsi Kelola</th>
+                        </tr>
+                    </thead>
+                    <tbody id="anggota-list" class="divide-y divide-slate-100"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="admin.js"></script>
+</body>
+</html>

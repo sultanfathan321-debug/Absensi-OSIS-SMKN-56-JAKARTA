@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AbsenModern - Presence System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="flex items-center justify-center min-h-screen p-4 bg-slate-100">
+
+    <div id="app" class="w-full max-w-md">
+        
+        <div id="login-step" class="glass-card p-8 rounded-3xl shadow-2xl">
+            <!-- HEADER DENGAN LOGO DI ATAS -->
+            <div class="flex flex-col items-center mb-6">
+                <div class="flex items-center justify-center gap-8 mb-4">
+                    <img src="Logo MPK rev..png" alt="Logo MPK" class="w-32 h-32 object-contain drop-shadow-lg hover:scale-110 transition-transform">
+                    <img src="Logo OSIS rev. (1).png" alt="Logo OSIS" class="w-32 h-32 object-contain drop-shadow-lg hover:scale-110 transition-transform">
+                </div>
+                <h2 class="text-3xl font-bold text-center">Absensi</h2>
+                <p class="text-sm text-slate-500 mt-2 text-center">OSIS SMKN 56 JAKARTA</p>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Nama Lengkap</label>
+                    <input type="text" id="nama" class="input-field" placeholder="Masukkan nama Anda">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Sekretariat Bidang</label>
+                    <select id="sekbid" class="input-field">
+                        <option value="">Pilih Sekbid</option>
+                        <option value="Humas">Humas</option>
+                        <option value="Media dan Publikasi">Media dan Publikasi</option>
+                        <option value="Teknologi">Teknologi</option>
+                    </select>
+                </div>
+                <button id="btnLogin" class="btn-primary mt-4">Masuk ke Presensi</button>
+            </div>
+        </div>
+
+        <div id="presence-step" class="hidden glass-card p-6 rounded-3xl shadow-2xl">
+            <h2 class="text-xl font-bold text-slate-800 mb-4 text-center">Ambil Presensi</h2>
+            
+            <div class="relative rounded-2xl overflow-hidden bg-black aspect-square mb-4 border-2 border-white shadow-md">
+                <video id="webcam" autoplay playsinline class="w-full h-full object-cover"></video>
+                <canvas id="canvas" class="hidden"></canvas>
+            </div>
+
+            <div class="bg-blue-50 p-3 rounded-xl mb-4 text-center">
+                <p id="loc-info" class="text-[11px] text-blue-700 font-medium">📍 Mendeteksi Lokasi & Alamat...</p>
+            </div>
+
+            <div class="bg-white/50 p-4 rounded-xl border border-slate-200 mb-4">
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-3">Status Kehadiran</label>
+                <div class="flex justify-between gap-2">
+                    <label class="flex-1 flex items-center justify-center gap-2 p-2 rounded-lg border border-slate-200 cursor-pointer hover:bg-white transition">
+                        <input type="radio" name="status" value="Hadir" checked> <span class="text-sm">Hadir</span>
+                    </label>
+                    <label class="flex-1 flex items-center justify-center gap-2 p-2 rounded-lg border border-slate-200 cursor-pointer hover:bg-white transition">
+                        <input type="radio" name="status" value="Izin"> <span class="text-sm">Izin</span>
+                    </label>
+                    <label class="flex-1 flex items-center justify-center gap-2 p-2 rounded-lg border border-slate-200 cursor-pointer hover:bg-white transition">
+                        <input type="radio" name="status" value="Tidak Hadir"> <span class="text-sm">Absen</span>
+                    </label>
+                </div>
+
+                <div id="alasan-container" class="hidden mt-4">
+                    <textarea id="alasan" class="w-full p-3 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Tuliskan alasan Anda di sini..."></textarea>
+                </div>
+            </div>
+
+            <button id="btnAbsen" class="btn-primary">Kirim Presensi</button>
+        </div>
+
+        <div id="success-step" class="hidden glass-card p-10 rounded-3xl shadow-2xl text-center">
+            <div class="w-20 h-20 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">✔</div>
+            <h2 class="text-2xl font-bold text-slate-800">Berhasil!</h2>
+            <p class="text-slate-500 text-sm mt-2">Data Anda telah masuk ke database admin.</p>
+            <button onclick="location.reload()" class="mt-6 text-blue-600 font-bold">Kembali</button>
+        </div>
+
+    </div>
+
+    <script type="module" src="app.js"></script>
+</body>
+</html>
