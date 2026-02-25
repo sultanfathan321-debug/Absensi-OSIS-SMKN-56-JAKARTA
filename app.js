@@ -13,21 +13,25 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Hide loading screen after 2 seconds
+// Hide loading screen after page loads
 window.addEventListener('load', () => {
     setTimeout(() => {
         const loadingScreen = document.getElementById('loading-screen');
         const appContainer = document.getElementById('app');
         if (loadingScreen && appContainer) {
-            loadingScreen.style.display = 'none';
-            appContainer.style.opacity = '1';
+            loadingScreen.style.transition = 'opacity 0.4s ease-out';
+            loadingScreen.style.opacity = '0';
+            setTimeout(() => {
+                loadingScreen.style.display = 'none';
+                appContainer.style.opacity = '1';
+            }, 400);
         }
-    }, 1500);
+    }, 1200);
 });
 
 const video = document.getElementById('webcam');
 const canvas = document.getElementById('canvas');
-let lat = "", long = "", fullAddress = "";
+let lat = "", long = "", accuracy = "", fullAddress = "";
 
 // --- FITUR BARU: AMBIL DAFTAR SEKBID DARI DATABASE ---
 async function loadSekbidFromDB() {
@@ -92,58 +96,93 @@ async function initCamera() {
 }
 
 function requestLocationPermission() {
-    // Show loading indicator
-    document.getElementById('loc-info').innerText = `📍 Mendeteksi lokasi...`;
+    const locInfoEl = document.getElementById('loc-info');
+    locInfoEl.innerText = `📍 Meminta izin lokasi...`;
+    locInfoEl.style.color = '#3b82f6';
     
-    // Request geolocation with timeout and explicit error handling
-    navigator.geolocation.getCurrentPosition(
-        async (position) => {
-            // SUCCESS: Location granted
-            try {
-                lat = position.coords.latitude;
-                long = position.coords.longitude;
-                
-                // Try to get address from coordinates
+    // Retry logic untuk location request
+    const attemptGetLocation = (retries = 3) => {
+        navigator.geolocation.getCurrentPosition(
+            async (position) => {
+                // SUCCESS: Location granted
                 try {
-                    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${long}`);
-                    const data = await res.json();
-                    fullAddress = data.display_name;
+                    lat = position.coords.latitude;
+                    long = position.coords.longitude;
+                    accuracy = position.coords.accuracy;
+                    
+                    // Try to get address from coordinates
+                    try {
+                        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${long}`, {
+                            timeout: 5000
+                        });
+                        const data = await res.json();
+                        fullAddress = data.display_name || `${lat.toFixed(4)}, ${long.toFixed(4)}`;
+                    } catch (e) {
+                        // Fallback to coordinates only
+                        fullAddress = `${lat.toFixed(4)}, ${long.toFixed(4)}`;
+                    }
+                    
+                    locInfoEl.innerText = `✅ ${fullAddress}`;
+                    locInfoEl.style.color = '#10b981';
                 } catch (e) {
-                    // Fallback to coordinates only
+                    console.error("Location processing error:", e);
                     fullAddress = `${lat.toFixed(4)}, ${long.toFixed(4)}`;
+                    locInfoEl.innerText = `✅ ${fullAddress}`;
+                    locInfoEl.style.color = '#10b981';
+                }
+            },
+            (error) => {
+                // ERROR: Location permission denied or unavailable
+                console.error("Geolocation error code:", error.code, "Message:", error.message);
+                
+                let errorMsg = "Lokasi tidak terdeteksi";
+                let bgColor = '#ef4444';
+                
+                if (error.code === 1) { // PERMISSION_DENIED
+                    errorMsg = "❌ Izin lokasi ditolak";
+                    // Tunjukkan instruksi lebih detail
+                    alert(`📍 Instruksi untuk mengaktifkan lokasi:\n\n` +
+                        `📱 (Smartphone):\n` +
+                        `1. Buka Settings → Privacy/Permissions\n` +
+                        `2. Cari Location/Lokasi\n` +
+                        `3. Izinkan akses untuk Chrome/Firefox/Safari\n` +
+                        `4. Kembali ke app ini dan refresh halaman\n\n` +
+                        `💻 (Browser Desktop):\n` +
+                        `1. Klik kunci/info icon di address bar\n` +
+                        `2. Pilih "Allow" untuk Location\n` +
+                        `3. Refresh halaman ini`);
+                } else if (error.code === 2) { // POSITION_UNAVAILABLE
+                    errorMsg = "⏳ Lokasi sedang dideteksi... Tunggu sebentar";
+                    bgColor = '#f59e0b';
+                    // Retry setelah 3 detik
+                    if (retries > 0) {
+                        setTimeout(() => attemptGetLocation(retries - 1), 3000);
+                    }
+                } else if (error.code === 3) { // TIMEOUT
+                    errorMsg = "⏱️ Timeout - Lokasi terlalu lama";
+                    if (retries > 0) {
+                        setTimeout(() => attemptGetLocation(retries - 1), 2000);
+                    }
                 }
                 
-                document.getElementById('loc-info').innerText = `📍 ${fullAddress}`;
-            } catch (e) {
-                console.error("Location error:", e);
-                fullAddress = `${lat.toFixed(4)}, ${long.toFixed(4)}`;
-                document.getElementById('loc-info').innerText = `📍 ${fullAddress}`;
+                fullAddress = errorMsg;
+                locInfoEl.innerText = errorMsg;
+                locInfoEl.style.color = bgColor;
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 15000,  // Increase timeout untuk mobile yang lebih lambat
+                maximumAge: 0    // Tidak pakai cached location
             }
-        },
-        (error) => {
-            // ERROR: Location permission denied or unavailable
-            console.error("Geolocation error:", error);
-            
-            let errorMsg = "Lokasi tidak terdeteksi";
-            if (error.code === error.PERMISSION_DENIED) {
-                errorMsg = "⚠️ Izin lokasi ditolak! Aktifkan di pengaturan browser.";
-                alert("📍 PENTING: Mohon izinkan akses lokasi di pengaturan browser Anda!");
-            } else if (error.code === error.POSITION_UNAVAILABLE) {
-                errorMsg = "⚠️ Lokasi tidak tersedia";
-            } else if (error.code === error.TIMEOUT) {
-                errorMsg = "⚠️ Request lokasi timeout";
-            }
-            
-            fullAddress = errorMsg;
-            document.getElementById('loc-info').innerText = errorMsg;
-        },
-        {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 0
-        }
-    );
+        );
+    };
+    
+    // Mulai dengan attempt kali pertama
+    attemptGetLocation();
 }
+
+// Make requestLocationPermission globally accessible for refresh button
+window.requestLocationPermission = requestLocationPermission;
 
 document.getElementById('btnAbsen').onclick = async () => {
     const status = document.querySelector('input[name="status"]:checked').value;
