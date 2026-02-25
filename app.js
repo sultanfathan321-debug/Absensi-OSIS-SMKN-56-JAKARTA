@@ -71,25 +71,66 @@ async function initCamera() {
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
         video.srcObject = stream;
-        navigator.geolocation.getCurrentPosition(async (p) => {
+        
+        // Request location permission with explicit prompt
+        requestLocationPermission();
+    } catch (e) {
+        alert("Mohon izinkan akses kamera! 📷");
+    }
+}
+
+function requestLocationPermission() {
+    // Show loading indicator
+    document.getElementById('loc-info').innerText = `📍 Mendeteksi lokasi...`;
+    
+    // Request geolocation with timeout and explicit error handling
+    navigator.geolocation.getCurrentPosition(
+        async (position) => {
+            // SUCCESS: Location granted
             try {
-                lat = p.coords.latitude;
-                long = p.coords.longitude;
-                const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${long}`);
-                const data = await res.json();
-                fullAddress = data.display_name;
+                lat = position.coords.latitude;
+                long = position.coords.longitude;
+                
+                // Try to get address from coordinates
+                try {
+                    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${long}`);
+                    const data = await res.json();
+                    fullAddress = data.display_name;
+                } catch (e) {
+                    // Fallback to coordinates only
+                    fullAddress = `${lat.toFixed(4)}, ${long.toFixed(4)}`;
+                }
+                
                 document.getElementById('loc-info').innerText = `📍 ${fullAddress}`;
             } catch (e) {
+                console.error("Location error:", e);
                 fullAddress = `${lat.toFixed(4)}, ${long.toFixed(4)}`;
                 document.getElementById('loc-info').innerText = `📍 ${fullAddress}`;
             }
-        }, (err) => {
-            fullAddress = "Lokasi tidak terdeteksi";
-            document.getElementById('loc-info').innerText = `📍 ${fullAddress}`;
-        });
-    } catch (e) {
-        alert("Mohon izinkan akses kamera!");
-    }
+        },
+        (error) => {
+            // ERROR: Location permission denied or unavailable
+            console.error("Geolocation error:", error);
+            
+            let errorMsg = "Lokasi tidak terdeteksi";
+            if (error.code === error.PERMISSION_DENIED) {
+                errorMsg = "⚠️ Izin lokasi ditolak! Aktifkan di pengaturan browser.";
+                alert("📍 PENTING: Mohon izinkan akses lokasi di pengaturan browser Anda!");
+            } else if (error.code === error.POSITION_UNAVAILABLE) {
+                errorMsg = "⚠️ Lokasi tidak tersedia";
+            } else if (error.code === error.TIMEOUT) {
+                errorMsg = "⚠️ Request lokasi timeout";
+            }
+            
+            fullAddress = errorMsg;
+            document.getElementById('loc-info').innerText = errorMsg;
+        },
+        {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+        }
+    );
 }
 
 document.getElementById('btnAbsen').onclick = async () => {
