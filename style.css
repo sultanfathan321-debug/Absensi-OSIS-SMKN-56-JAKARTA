@@ -6,6 +6,69 @@
     box-sizing: border-box;
 }
 
+/* Loading Screen Animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes spin-slow {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes pulse-glow {
+    0%, 100% {
+        opacity: 0.5;
+        box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+    }
+    50% {
+        opacity: 1;
+        box-shadow: 0 0 40px rgba(255, 255, 255, 0.6);
+    }
+}
+
+.animate-fadeInUp {
+    animation: fadeInUp 0.8s ease-out forwards;
+}
+
+.animate-fadeInUp:nth-child(1) {
+    animation-delay: 0.2s;
+}
+
+.animate-fadeInUp:nth-child(2) {
+    animation-delay: 0.4s;
+}
+
+/* Loading Screen Styling */
+#loading-screen {
+    backdrop-filter: blur(10px);
+    animation: fadeInUp 0.5s ease-out;
+}
+
+#app {
+    animation: fadeIn 0.6s ease-in 1.5s forwards;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
 body {
     font-family: 'Poppins', sans-serif;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -30,6 +93,8 @@ body::before {
 #app {
     position: relative;
     z-index: 10;
+    opacity: 0;
+    transition: opacity 0.6s ease-in-out;
 }
 
 h2 {

@@ -13,6 +13,18 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+// Hide loading screen after 2 seconds
+window.addEventListener('load', () => {
+    setTimeout(() => {
+        const loadingScreen = document.getElementById('loading-screen');
+        const appContainer = document.getElementById('app');
+        if (loadingScreen && appContainer) {
+            loadingScreen.style.display = 'none';
+            appContainer.style.opacity = '1';
+        }
+    }, 1500);
+});
+
 const video = document.getElementById('webcam');
 const canvas = document.getElementById('canvas');
 let lat = "", long = "", fullAddress = "";
