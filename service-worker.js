@@ -1,5 +1,5 @@
 // Cache version - update this when deploying new updates
-const CACHE_VERSION = '1.0.1';
+const CACHE_VERSION = '1.0.2';
 const CACHE_NAME = `absensi-${CACHE_VERSION}`;
 const STATIC_CACHE = `absensi-static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `absensi-dynamic-${CACHE_VERSION}`;
@@ -11,7 +11,7 @@ const staticAssets = [
   '/app.js',
   '/admin.js',
   '/manifest.json',
-  '/app-icon.svg',
+  '/app-icon.png',
   '/Logo MPK rev..png',
   '/Logo OSIS rev. (1).png'
 ];
@@ -69,16 +69,16 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
-  
+
   // Skip cross-origin requests (Firebase API, etc)
   if (url.origin !== location.origin) {
     return;
   }
-  
+
   // Network-first for HTML (always get latest version)
-  if (request.method === 'GET' && 
-      (request.destination === 'document' || 
-       url.pathname.endsWith('.html'))) {
+  if (request.method === 'GET' &&
+    (request.destination === 'document' ||
+      url.pathname.endsWith('.html'))) {
     event.respondWith(
       fetch(request)
         .then((response) => {
@@ -102,7 +102,7 @@ self.addEventListener('fetch', (event) => {
     );
     return;
   }
-  
+
   // Cache-first for static assets
   if (request.method === 'GET') {
     event.respondWith(
@@ -111,7 +111,7 @@ self.addEventListener('fetch', (event) => {
           if (cachedResponse) {
             return cachedResponse;
           }
-          
+
           return fetch(request).then((response) => {
             const clonedResponse = response.clone();
             caches.open(DYNAMIC_CACHE).then((cache) => {

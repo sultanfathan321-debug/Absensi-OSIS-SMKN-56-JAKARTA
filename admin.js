@@ -22,14 +22,79 @@ const statsContainer = document.getElementById('stats-container');
 const filterBulan = document.getElementById('filter-bulan');
 
 // --- FUNGSI LOAD DASHBOARD (STATISTIK & LOG) ---
+let unsubscribeDashboard = null; // simpan listener aktif
+
 function loadDashboard(bulanFilter = "Semua") {
+    // tutup listener lama agar tidak double render
+    if (unsubscribeDashboard) {
+        unsubscribeDashboard();
+        unsubscribeDashboard = null;
+    }
+
     const q = query(collection(db, "presensi_log"), orderBy("waktu", "desc"));
-    
-    onSnapshot(q, (snap) => {
+
+    unsubscribeDashboard = onSnapshot(q, (snap) => {
         listRekap.innerHTML = "";
         listIndividu.innerHTML = "";
         let statsSekbid = {};
         let statsOrang = {};
+        let totalHadir = 0, totalIzin = 0, totalAbsen = 0;
+
+        // NORMALISASI SEKBID — petakan nama lama/varian ke nama kanonik
+        const SEKBID_ALIAS = {
+            // Sekbid 1
+            'keagamaan': 'Sekbid 1 Keagamaan dan Budi Pekerti Luhur',
+            'keagamaan dan budi pekerti luhur': 'Sekbid 1 Keagamaan dan Budi Pekerti Luhur',
+            'keagamaan & budi pekerti luhur': 'Sekbid 1 Keagamaan dan Budi Pekerti Luhur',
+            'sekbid 1': 'Sekbid 1 Keagamaan dan Budi Pekerti Luhur',
+            'sekbid 1 — keagamaan dan budi pekerti luhur': 'Sekbid 1 Keagamaan dan Budi Pekerti Luhur',
+            // Sekbid 2
+            'olahraga': 'Sekbid 2 Organisasi dan Olahraga',
+            'organisasi dan olahraga': 'Sekbid 2 Organisasi dan Olahraga',
+            'organisasi & olahraga': 'Sekbid 2 Organisasi dan Olahraga',
+            'olahraga & organisasi': 'Sekbid 2 Organisasi dan Olahraga',
+            'olaharaga & organisasi': 'Sekbid 2 Organisasi dan Olahraga',
+            'olaharaga dan organisasi': 'Sekbid 2 Organisasi dan Olahraga',
+            'sekbid 2': 'Sekbid 2 Organisasi dan Olahraga',
+            'sekbid 2 — organisasi dan olahraga': 'Sekbid 2 Organisasi dan Olahraga',
+            // Sekbid 3
+            'kewirausahaan': 'Sekbid 3 Kewirausahaan',
+            'sekbid 3': 'Sekbid 3 Kewirausahaan',
+            'sekbid 3 — kewirausahaan': 'Sekbid 3 Kewirausahaan',
+            // Sekbid 4
+            'humas': 'Sekbid 4 Hubungan Masyarakat',
+            'hubungan masyarakat': 'Sekbid 4 Hubungan Masyarakat',
+            'sekbid 4': 'Sekbid 4 Hubungan Masyarakat',
+            'sekbid 4 — hubungan masyarakat': 'Sekbid 4 Hubungan Masyarakat',
+            // Sekbid 5
+            'bela negara': 'Sekbid 5 Bela Negara dan Kehidupan Berbangsa',
+            'belas negara': 'Sekbid 5 Bela Negara dan Kehidupan Berbangsa',
+            'bela negara dan kehidupan berbangsa': 'Sekbid 5 Bela Negara dan Kehidupan Berbangsa',
+            'belas negara dan kehidupan berbangsa': 'Sekbid 5 Bela Negara dan Kehidupan Berbangsa',
+            'bela negara & kehidupan berbangsa': 'Sekbid 5 Bela Negara dan Kehidupan Berbangsa',
+            'belas negara & kehidupan berbangsa': 'Sekbid 5 Bela Negara dan Kehidupan Berbangsa',
+            'sekbid 5': 'Sekbid 5 Bela Negara dan Kehidupan Berbangsa',
+            'sekbid 5 — bela negara dan kehidupan berbangsa': 'Sekbid 5 Bela Negara dan Kehidupan Berbangsa',
+            // Sekbid 6
+            'sastra': 'Sekbid 6 Sastra dan Bahasa',
+            'sastra dan bahasa': 'Sekbid 6 Sastra dan Bahasa',
+            'kesenian & sastra': 'Sekbid 6 Sastra dan Bahasa',
+            'kesenian dan sastra': 'Sekbid 6 Sastra dan Bahasa',
+            'sekbid 6': 'Sekbid 6 Sastra dan Bahasa',
+            'sekbid 6 — sastra dan bahasa': 'Sekbid 6 Sastra dan Bahasa',
+            // Sekbid 7
+            'media': 'Sekbid 7 Media Publikasi',
+            'media dan publikasi': 'Sekbid 7 Media Publikasi',
+            'media & publikasi': 'Sekbid 7 Media Publikasi',
+            'media publikasi': 'Sekbid 7 Media Publikasi',
+            'teknologi': 'Sekbid 7 Media Publikasi',
+            'sekbid 7': 'Sekbid 7 Media Publikasi',
+            'sekbid 7 — media publikasi': 'Sekbid 7 Media Publikasi',
+        };
+        const normalizeSekbid = (raw) => {
+            const key = (raw || '').trim().toLowerCase();
+            return SEKBID_ALIAS[key] || (raw || '').trim();
+        };
 
         snap.forEach(docSnap => {
             const d = docSnap.data();
@@ -38,65 +103,182 @@ function loadDashboard(bulanFilter = "Semua") {
 
             if (bulanFilter === "Semua" || bulanData === parseInt(bulanFilter)) {
                 // RENDER TABEL LOG REKAP
+                const badgeClass = d.status === 'Hadir' ? 'badge-green' : (d.status === 'Izin' ? 'badge-blue' : 'badge-red');
+                const statusIcon = d.status === 'Hadir'
+                    ? '<svg width="11" height="11" style="flex-shrink:0"><use href="#icon-check-circle"/></svg>'
+                    : (d.status === 'Izin'
+                        ? '<svg width="11" height="11" style="flex-shrink:0"><use href="#icon-file-text"/></svg>'
+                        : '<svg width="11" height="11" style="flex-shrink:0"><use href="#icon-x-circle"/></svg>');
                 listRekap.innerHTML += `
-                <tr class="hover:bg-slate-50 transition">
-                    <td class="p-4">
-                        <div class="font-bold text-slate-800">${d.nama}</div>
-                        <div class="text-[10px] text-slate-400 font-bold uppercase">${d.sekbid}</div>
+                <tr>
+                    <td>
+                        <div class="td-primary">${d.nama}</div>
+                        <div class="td-meta">${d.sekbid}</div>
                     </td>
-                    <td class="p-4">
-                        <span class="px-2 py-1 rounded-lg text-[10px] font-black ${d.status === 'Hadir' ? 'bg-green-100 text-green-600' : 'bg-red-50 text-red-500'}">${d.status.toUpperCase()}</span>
-                        <p class="text-[11px] text-slate-400 mt-1 italic truncate w-32">${d.alasan || '-'}</p>
+                    <td>
+                        <span class="badge ${badgeClass}" style="display:inline-flex;align-items:center;gap:0.25rem">${statusIcon} ${d.status}</span>
+                        ${d.alasan ? `<div style="font-size:0.7rem;color:var(--ink-3);margin-top:0.3rem;font-style:italic;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.alasan}</div>` : ''}
                     </td>
-                    <td class="p-4 text-[11px]">
-                        <div class="font-bold text-slate-700">${d.waktu || '-'}</div>
-                        <div class="text-blue-500 truncate w-40 mt-0.5">${d.lokasi?.alamat || 'Tidak Terdeteksi'}</div>
+                    <td>
+                        <div style="font-size:0.8rem;font-weight:600;color:var(--ink-1)">${d.waktu || '—'}</div>
+                        <div style="font-size:0.68rem;color:var(--blue);margin-top:0.15rem;max-width:175px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.lokasi?.alamat || 'Tidak Terdeteksi'}</div>
                     </td>
-                    <td class="p-4"><img src="${d.foto || ''}" class="w-12 h-12 rounded-xl object-cover border-2 border-white shadow-sm hover:scale-150 transition-all onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect fill=%22%23ddd%22 width=%22100%22 height=%22100%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-family=%22sans-serif%22 font-size=%2214%22 fill=%22%23999%22%3ENo Image%3C/text%3E%3C/svg%3E'"></td>
-                    <td class="p-4 text-center">
-                        <button data-log-id="${docSnap.id}" class="btn-hapus-rekap text-red-500 font-bold text-xs hover:underline">HAPUS</button>
+                    <td>
+                        ${d.foto ? `<img src="${d.foto}" class="foto-thumb" alt="Foto">` : '<span style="color:var(--ink-4);font-size:0.78rem">—</span>'}
+                    </td>
+                    <td style="text-align:center">
+                        <button data-log-id="${docSnap.id}" class="btn-icon btn-icon-red btn-hapus-rekap" title="Hapus">
+                            <svg width="13" height="13"><use href="#icon-trash"/></svg>
+                        </button>
                     </td>
                 </tr>`;
 
-                // LOGIKA HITUNG
-                if (!statsSekbid[d.sekbid]) statsSekbid[d.sekbid] = { hadir: 0, izin: 0, absen: 0 };
-                if (!statsOrang[d.nama]) statsOrang[d.nama] = { sekbid: d.sekbid, hadir: 0, izin: 0, absen: 0 };
+                const sekbidNorm = normalizeSekbid(d.sekbid);
 
-                if (d.status === "Hadir") { statsSekbid[d.sekbid].hadir++; statsOrang[d.nama].hadir++; }
-                else if (d.status === "Izin") { statsSekbid[d.sekbid].izin++; statsOrang[d.nama].izin++; }
-                else { statsSekbid[d.sekbid].absen++; statsOrang[d.nama].absen++; }
+                // LOGIKA HITUNG
+                if (!statsSekbid[sekbidNorm]) statsSekbid[sekbidNorm] = { hadir: 0, izin: 0, absen: 0 };
+                if (!statsOrang[d.nama]) statsOrang[d.nama] = { sekbid: sekbidNorm, hadir: 0, izin: 0, absen: 0 };
+
+                if (d.status === "Hadir") { statsSekbid[sekbidNorm].hadir++; statsOrang[d.nama].hadir++; totalHadir++; }
+                else if (d.status === "Izin") { statsSekbid[sekbidNorm].izin++; statsOrang[d.nama].izin++; totalIzin++; }
+                else { statsSekbid[sekbidNorm].absen++; statsOrang[d.nama].absen++; totalAbsen++; }
             }
         });
 
-        // RENDER TABEL INDIVIDU
+        // RENDER TABEL INDIVIDU — grouped by sekbid in defined order
+        const SEKBID_ORDER = [
+            'Ketua OSIS',
+            'Wakil Ketua OSIS',
+            'Sekretaris',
+            'Bendahara',
+            'Koordinator Sekbid',
+            'Sekbid 1 Keagamaan dan Budi Pekerti Luhur',
+            'Sekbid 2 Organisasi dan Olahraga',
+            'Sekbid 3 Kewirausahaan',
+            'Sekbid 4 Hubungan Masyarakat',
+            'Sekbid 5 Bela Negara dan Kehidupan Berbangsa',
+            'Sekbid 6 Sastra dan Bahasa',
+            'Sekbid 7 Media Publikasi',
+        ];
+
+        const grouped = {};
         for (const [nama, data] of Object.entries(statsOrang)) {
+            if (!grouped[data.sekbid]) grouped[data.sekbid] = [];
+            grouped[data.sekbid].push({ nama, ...data });
+        }
+
+        // build sorted entries: known order first, then any extra
+        const knownEntries = SEKBID_ORDER
+            .filter(s => grouped[s])
+            .map(s => [s, grouped[s]]);
+        const extraEntries = Object.entries(grouped)
+            .filter(([s]) => !SEKBID_ORDER.includes(s));
+        const sortedEntries = [...knownEntries, ...extraEntries];
+
+        for (const [sekbid, members] of sortedEntries) {
+            const subH = members.reduce((s, m) => s + m.hadir, 0);
+            const subI = members.reduce((s, m) => s + m.izin, 0);
+            const subA = members.reduce((s, m) => s + m.absen, 0);
+
+            // category header
             listIndividu.innerHTML += `
-            <tr class="hover:bg-slate-50 transition">
-                <td class="p-4 font-bold text-slate-700">${nama}</td>
-                <td class="p-4 text-xs font-medium text-slate-400">${data.sekbid}</td>
-                <td class="p-4 text-center font-bold text-green-600">${data.hadir}</td>
-                <td class="p-4 text-center font-bold text-blue-500">${data.izin}</td>
-                <td class="p-4 text-center font-bold text-red-400">${data.absen}</td>
-                <td class="p-4 text-center font-black bg-slate-50 text-slate-800">${data.hadir + data.izin + data.absen}</td>
+            <tr style="background:rgba(124,58,237,0.08);border-top:1px solid rgba(124,58,237,0.2)">
+                <td colspan="3" style="padding:0.6rem 1rem">
+                    <div style="display:flex;align-items:center;gap:0.5rem">
+                        <div style="width:3px;height:14px;background:var(--violet);border-radius:2px;flex-shrink:0"></div>
+                        <span style="font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--violet-light)">${sekbid}</span>
+                        <span style="font-size:0.65rem;font-weight:600;color:var(--ink-3);margin-left:auto">${members.length} anggota</span>
+                    </div>
+                </td>
+                <td class="num-green" style="background:rgba(124,58,237,0.08);font-size:0.78rem">${subH}</td>
+                <td class="num-blue"  style="background:rgba(124,58,237,0.08);font-size:0.78rem">${subI}</td>
+                <td class="num-red"   style="background:rgba(124,58,237,0.08);font-size:0.78rem">${subA}</td>
+                <td class="num-ink"   style="background:rgba(124,58,237,0.08);font-size:0.78rem">${subH + subI + subA}</td>
+            </tr>`;
+
+            // member rows
+            members.forEach((m, idx) => {
+                listIndividu.innerHTML += `
+                <tr>
+                    <td colspan="3" style="padding:0.6rem 1rem 0.6rem 2rem">
+                        <div style="display:flex;align-items:center;gap:0.55rem">
+                            <span style="font-size:0.65rem;font-weight:700;color:var(--ink-4);width:18px;text-align:right;flex-shrink:0">${idx + 1}.</span>
+                            <span class="td-primary" style="font-size:0.84rem">${m.nama}</span>
+                        </div>
+                    </td>
+                    <td class="num-green" style="font-size:0.85rem">${m.hadir}</td>
+                    <td class="num-blue"  style="font-size:0.85rem">${m.izin}</td>
+                    <td class="num-red"   style="font-size:0.85rem">${m.absen}</td>
+                    <td class="num-ink"   style="font-size:0.85rem">${m.hadir + m.izin + m.absen}</td>
+                </tr>`;
+            });
+        }
+
+        // Footer total keseluruhan
+        if (Object.keys(statsOrang).length > 0) {
+            const totalAll = totalHadir + totalIzin + totalAbsen;
+            listIndividu.innerHTML += `
+            <tr class="total-row" style="border-top:2px solid rgba(124,58,237,0.3)">
+                <td colspan="3" style="padding:0.875rem 1rem;font-weight:800;color:var(--ink-1);font-size:0.78rem;letter-spacing:0.3px">
+                    Total Keseluruhan &nbsp;<span style="font-size:0.65rem;font-weight:600;color:var(--ink-3)">(${Object.keys(statsOrang).length} anggota)</span>
+                </td>
+                <td class="num-green">${totalHadir}</td>
+                <td class="num-blue">${totalIzin}</td>
+                <td class="num-red">${totalAbsen}</td>
+                <td class="num-ink" style="color:var(--violet-light)">${totalAll}</td>
             </tr>`;
         }
 
-        // RENDER CARDS SEKBID
+        // RENDER CARDS SUMMARY TOTAL (atas) + PER SEKBID (bawah)
         statsContainer.innerHTML = "";
-        for (const [bidang, c] of Object.entries(statsSekbid)) {
+        const totalKeseluruhan = totalHadir + totalIzin + totalAbsen;
+
+        // --- 4 summary cards global ---
+        const summaryCards = [
+            { label: 'Total Hadir', value: totalHadir, iconRef: 'icon-check-circle', colorClass: 'stat-icon-green', pct: totalKeseluruhan ? Math.round(totalHadir / totalKeseluruhan * 100) : 0, pctColor: '#34d399' },
+            { label: 'Total Izin', value: totalIzin, iconRef: 'icon-file-text', colorClass: 'stat-icon-blue', pct: totalKeseluruhan ? Math.round(totalIzin / totalKeseluruhan * 100) : 0, pctColor: '#60a5fa' },
+            { label: 'Total Absen', value: totalAbsen, iconRef: 'icon-x-circle', colorClass: 'stat-icon-red', pct: totalKeseluruhan ? Math.round(totalAbsen / totalKeseluruhan * 100) : 0, pctColor: '#fc8181' },
+            { label: 'Total Keseluruhan', value: totalKeseluruhan, iconRef: 'icon-users', colorClass: 'stat-icon-purple', pct: null, pctColor: '#a855f7' },
+        ];
+
+        const colorMap = { 'Total Hadir': 'si-green', 'Total Izin': 'si-blue', 'Total Absen': 'si-red', 'Total Keseluruhan': 'si-indigo' };
+        summaryCards.forEach(({ label, value, iconRef, pct, pctColor }) => {
+            const iconCls = colorMap[label] || 'si-indigo';
             statsContainer.innerHTML += `
-            <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm stats-card">
-                <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">${bidang}</h3>
-                <div class="flex justify-between items-end">
-                    <div>
-                        <div class="text-3xl font-black text-slate-900">${c.hadir + c.izin + c.absen}</div>
-                        <div class="text-[10px] font-bold text-slate-400">Total Laporan</div>
-                    </div>
-                    <div class="text-[10px] font-bold text-right">
-                        <div class="text-green-600">H: ${c.hadir}</div>
-                        <div class="text-blue-500">I: ${c.izin}</div>
-                        <div class="text-red-500">A/S: ${c.absen}</div>
-                    </div>
+            <div class="stat-card">
+                <div class="stat-icon ${iconCls}">
+                    <svg width="18" height="18"><use href="#${iconRef}"/></svg>
+                </div>
+                <div class="stat-info">
+                    <div class="stat-value">${value}</div>
+                    <div class="stat-label">${label}</div>
+                    <div class="stat-pct">${pct !== null ? `<b>${pct}%</b> dari total` : 'semua laporan'}</div>
+                </div>
+            </div>`;
+        });
+
+        // --- divider label per sekbid ---
+        if (Object.keys(statsSekbid).length > 0) {
+            statsContainer.innerHTML += `<div class="stat-divider">Per Sekretariat Bidang</div>`;
+        }
+
+        // --- per-sekbid cards ---
+        const sekbidIconRef = { 'Humas': 'icon-users', 'Media dan Publikasi': 'icon-bar-chart', 'Teknologi': 'icon-settings' };
+        const iconColors2 = ['si-indigo', 'si-green', 'si-blue', 'si-red', 'si-amber'];
+        let iconIdx = 0;
+        for (const [bidang, c] of Object.entries(statsSekbid)) {
+            const iconRef = sekbidIconRef[bidang] || 'icon-file-text';
+            const iconCls = iconColors2[iconIdx % iconColors2.length];
+            iconIdx++;
+            statsContainer.innerHTML += `
+            <div class="stat-card">
+                <div class="stat-icon ${iconCls}">
+                    <svg width="18" height="18"><use href="#${iconRef}"/></svg>
+                </div>
+                <div class="stat-info">
+                    <div class="stat-value">${c.hadir + c.izin + c.absen}</div>
+                    <div class="stat-label">${bidang}</div>
+                    <div class="stat-pct"><b style="color:var(--green)">${c.hadir}</b> H &middot; <b style="color:var(--blue)">${c.izin}</b> I &middot; <b style="color:var(--red)">${c.absen}</b> A</div>
                 </div>
             </div>`;
         }
@@ -105,29 +287,50 @@ function loadDashboard(bulanFilter = "Semua") {
 
 // --- MANAJEMEN ANGGOTA ---
 let currentEditId = null;
+let allMembersDocs = [];
 
-onSnapshot(collection(db, "daftar_anggota"), (snap) => {
+function renderAnggotaList() {
+    const searchTerm = document.getElementById('search-anggota')?.value.toLowerCase() || "";
     listAnggota.innerHTML = "";
-    snap.forEach(docSnap => {
+
+    // Sort members by name for better visibility
+    const filteredDocs = allMembersDocs.filter(docSnap => {
+        const d = docSnap.data();
+        return d.nama.toLowerCase().includes(searchTerm) || d.sekbid.toLowerCase().includes(searchTerm);
+    }).sort((a, b) => a.data().nama.localeCompare(b.data().nama));
+
+    filteredDocs.forEach(docSnap => {
         const d = docSnap.data();
         const id = docSnap.id;
         listAnggota.innerHTML += `
-        <tr class="hover:bg-slate-50 transition">
-            <td class="p-4 font-bold text-slate-700">${d.nama}</td>
-            <td class="p-4 text-slate-500">${d.sekbid}</td>
-            <td class="p-4 text-center space-x-4">
-                <button data-id="${id}" data-nama="${d.nama}" data-sekbid="${d.sekbid}" class="btn-edit text-blue-600 font-bold text-xs hover:underline">EDIT</button>
-                <button data-id="${id}" class="btn-hapus text-red-500 font-bold text-xs hover:underline">HAPUS</button>
+        <tr>
+            <td class="td-primary">${d.nama}</td>
+            <td class="td-meta" style="text-transform:uppercase;letter-spacing:0.3px">${d.sekbid}</td>
+            <td style="text-align:center">
+                <button data-id="${id}" data-nama="${d.nama}" data-sekbid="${d.sekbid}" class="btn-icon btn-icon-blue btn-edit" title="Edit">
+                    <svg width="13" height="13"><use href="#icon-edit"/></svg>
+                </button>
+                &nbsp;
+                <button data-id="${id}" class="btn-icon btn-icon-red btn-hapus" title="Hapus">
+                    <svg width="13" height="13"><use href="#icon-trash"/></svg>
+                </button>
             </td>
         </tr>`;
     });
+}
+
+onSnapshot(collection(db, "daftar_anggota"), (snap) => {
+    allMembersDocs = snap.docs;
+    renderAnggotaList();
 });
+
+document.getElementById('search-anggota')?.addEventListener('input', renderAnggotaList);
 
 // EVENT LISTENER TAMBAH ANGGOTA
 document.getElementById('btnTambah').onclick = async () => {
     const nama = document.getElementById('add-nama').value.trim();
     const sekbid = document.getElementById('add-sekbid').value.trim();
-    if(!nama || !sekbid) return alert("Isi data!");
+    if (!nama || !sekbid) return alert("Isi data!");
     await addDoc(collection(db, "daftar_anggota"), { nama, sekbid });
     document.getElementById('add-nama').value = ""; document.getElementById('add-sekbid').value = "";
     alert("Berhasil!");
@@ -137,13 +340,13 @@ document.getElementById('btnTambah').onclick = async () => {
 document.addEventListener('click', async (e) => {
     if (e.target.classList.contains('btn-hapus')) {
         const id = e.target.getAttribute('data-id');
-        if(confirm("Hapus anggota ini?")) await deleteDoc(doc(db, "daftar_anggota", id));
+        if (confirm("Hapus anggota ini?")) await deleteDoc(doc(db, "daftar_anggota", id));
     }
     if (e.target.classList.contains('btn-edit')) {
         const id = e.target.getAttribute('data-id');
         const nama = e.target.getAttribute('data-nama');
         const sekbid = e.target.getAttribute('data-sekbid');
-        
+
         currentEditId = id;
         document.getElementById('edit-nama').value = nama;
         document.getElementById('edit-sekbid').value = sekbid;
@@ -159,15 +362,15 @@ document.getElementById('btn-cancel-edit').onclick = () => {
 
 document.getElementById('btn-save-edit').onclick = async () => {
     if (!currentEditId) return;
-    
+
     const namaBaru = document.getElementById('edit-nama').value.trim();
     const sekbidBaru = document.getElementById('edit-sekbid').value.trim();
-    
+
     if (!namaBaru || !sekbidBaru) {
         alert("Nama dan Sekbid tidak boleh kosong!");
         return;
     }
-    
+
     try {
         await updateDoc(doc(db, "daftar_anggota", currentEditId), {
             nama: namaBaru,
@@ -193,7 +396,7 @@ document.getElementById('modal-edit').onclick = (e) => {
 document.addEventListener('click', async (e) => {
     if (e.target.classList.contains('btn-hapus-rekap')) {
         const logId = e.target.getAttribute('data-log-id');
-        if(confirm("Hapus data presensi ini?")) {
+        if (confirm("Hapus data presensi ini?")) {
             try {
                 await deleteDoc(doc(db, "presensi_log", logId));
                 alert("✅ Data presensi berhasil dihapus!");
@@ -204,21 +407,7 @@ document.addEventListener('click', async (e) => {
     }
 });
 
-// --- TABS & FILTER LOGIC ---
-const switchTab = (target) => {
-    ['rekap', 'individu', 'kelola'].forEach(t => {
-        document.getElementById(`section-${t}`).classList.add('hidden');
-        document.getElementById(`tab-${t}`).classList.replace('text-slate-900', 'text-slate-400');
-        document.getElementById(`tab-${t}`).classList.remove('tab-active');
-    });
-    document.getElementById(`section-${target}`).classList.remove('hidden');
-    document.getElementById(`tab-${target}`).classList.add('tab-active');
-    document.getElementById(`tab-${target}`).classList.replace('text-slate-400', 'text-slate-900');
-};
-
-document.getElementById('tab-rekap').onclick = () => switchTab('rekap');
-document.getElementById('tab-individu').onclick = () => switchTab('individu');
-document.getElementById('tab-kelola').onclick = () => switchTab('kelola');
+// --- TABS & FILTER LOGIC (handled by switchTab in admin.html inline script) ---
 
 filterBulan.onchange = (e) => loadDashboard(e.target.value);
 
@@ -228,19 +417,19 @@ document.getElementById('btnExcelUnduh').onclick = async () => {
         const bulanFilter = document.getElementById('filter-bulan').value;
         const btn = document.getElementById('btnExcelUnduh');
         const originalText = btn.innerText;
-        
+
         btn.innerText = "⏳ Mengekspor...";
         btn.disabled = true;
 
         const q = query(collection(db, "presensi_log"), orderBy("waktu", "desc"));
         const snap = await getDocs(q);
-        
+
         let data = [];
         snap.forEach(docSnap => {
             const d = docSnap.data();
             const waktuParts = d.waktu ? d.waktu.split('/') : ['01', '01', '2026'];
             const bulanData = parseInt(waktuParts[1]);
-            
+
             if (bulanFilter === "Semua" || bulanData === parseInt(bulanFilter)) {
                 data.push({
                     'Nama': d.nama || '-',
@@ -280,7 +469,7 @@ document.getElementById('btnExcelUnduh').onclick = async () => {
         const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
         const url = URL.createObjectURL(blob);
-        
+
         const tanggalSekarang = new Date();
         const bulanNama = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
         const namaBulan = bulanFilter === "Semua" ? "Semua_Bulan" : bulanNama[parseInt(bulanFilter)];
@@ -294,7 +483,7 @@ document.getElementById('btnExcelUnduh').onclick = async () => {
         document.body.removeChild(link);
 
         alert(`✅ File CSV berhasil diunduh!\nFile: ${filename}\nTotal Data: ${data.length} baris\n\n💡 Tip: Buka dengan Microsoft Excel untuk format terbaik.`);
-        
+
         btn.innerText = originalText;
         btn.disabled = false;
     } catch (error) {
@@ -310,7 +499,7 @@ loadDashboard();
 
 document.getElementById('btnHapusMassal').onclick = async () => {
     const bulanDipilih = document.getElementById('filter-bulan').value;
-    
+
     if (bulanDipilih === "Semua") {
         return alert("Pilih bulan spesifik di menu periode terlebih dahulu!");
     }
@@ -318,7 +507,7 @@ document.getElementById('btnHapusMassal').onclick = async () => {
     if (confirm(`Apakah Anda yakin ingin menghapus SEMUA data di bulan ke-${bulanDipilih}?`)) {
         const btn = document.getElementById('btnHapusMassal');
         const originalText = btn.innerText;
-        
+
         btn.innerText = "⏳ Sedang Menghapus...";
         btn.disabled = true;
 
@@ -329,14 +518,14 @@ document.getElementById('btnHapusMassal').onclick = async () => {
             querySnapshot.forEach((docSnap) => {
                 const data = docSnap.data();
                 const waktuStr = data.waktu || "";
-                
+
                 // Mendeteksi pemisah tanggal (bisa / atau -)
                 const separator = waktuStr.includes('/') ? '/' : '-';
                 const parts = waktuStr.split(separator);
 
                 if (parts.length >= 2) {
                     // Bagian bulan biasanya ada di indeks ke-1 (DD/MM/YYYY)
-                    const bulanData = parseInt(parts[1]); 
+                    const bulanData = parseInt(parts[1]);
 
                     if (bulanData === parseInt(bulanDipilih)) {
                         batchDelete.push(deleteDoc(doc(db, "presensi_log", docSnap.id)));

@@ -1,153 +1,237 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Sistem absensi digital OSIS SMKN 56 Jakarta dengan capture foto dan geolokasi">
-    <meta name="theme-color" content="#667eea">
+    <meta name="description" content="Sistem absensi digital OSIS SMKN 56 Jakarta">
+    <meta name="theme-color" content="#0f0b1e">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Absensi OSIS">
-    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect fill='%23667eea' width='180' height='180'/><text x='50%' y='50%' font-size='90' font-weight='bold' fill='white' text-anchor='middle' dominant-baseline='middle'>A</text></svg>">
+    <link rel="apple-touch-icon" href="app-icon.png">
+    <link rel="icon" type="image/png" href="app-icon.png">
     <link rel="manifest" href="manifest.json">
-    <title>AbsenModern - Presence System</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Absensi OSIS — SMKN 56 Jakarta</title>
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="flex items-center justify-center min-h-screen p-4">
-    <!-- Loading Screen - Clean Minimal Design -->
-    <div id="loading-screen" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-gradient-to-br from-purple-600 to-pink-500">
-        <!-- Minimal Loading Spinner -->
-        <div class="relative w-16 h-16 mb-12">
-            <div class="absolute inset-0 border-4 border-purple-200 rounded-full"></div>
-            <div class="absolute inset-0 border-4 border-transparent border-t-white border-r-white rounded-full animate-spin" style="animation-duration: 1.5s;"></div>
+
+<body>
+
+    <!-- ── LOADING SCREEN ── -->
+    <div id="loading-screen">
+        <div class="ls-logo">
+            <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none"
+                stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+            </svg>
         </div>
-        
-        <h2 class="text-2xl font-bold text-white mb-1">Absensi</h2>
-        <p class="text-white/70 text-xs mb-8">Loading...</p>
+        <p class="ls-title">Absensi OSIS</p>
+        <p class="ls-sub">SMKN 56 Jakarta</p>
+        <div class="ls-bar-wrap">
+            <div class="ls-bar"></div>
+        </div>
+        <p class="ls-status" id="ls-status">Menginisialisasi...</p>
     </div>
 
-    <div id="app" class="w-full max-w-md opacity-0" style="transition: opacity 0.6s ease-in-out;">
-        
-        <div id="login-step" class="glass-card p-8 rounded-3xl shadow-2xl">
-            <!-- HEADER DENGAN LOGO DI ATAS -->
-            <div class="flex flex-col items-center mb-6">
-                <div class="flex items-center justify-center gap-8 mb-4">
-                    <img src="Logo MPK rev..png" alt="Logo MPK" class="w-32 h-32 object-contain drop-shadow-lg hover:scale-110 transition-transform duration-300">
-                    <img src="Logo OSIS rev. (1).png" alt="Logo OSIS" class="w-32 h-32 object-contain drop-shadow-lg hover:scale-110 transition-transform duration-300">
+    <!-- ── APP ── -->
+    <div id="app">
+
+        <!-- STEP 1: LOGIN -->
+        <div id="login-step" class="card">
+            <div class="brand-header">
+                <div class="logos">
+                    <img src="Logo MPK rev..png" alt="Logo MPK" class="logo-img">
+                    <div class="logo-sep"></div>
+                    <img src="Logo OSIS rev. (1).png" alt="Logo OSIS" class="logo-img">
                 </div>
-                <h2 class="text-3xl font-bold text-center bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Absensi</h2>
-                <p class="text-sm text-slate-500 mt-2 text-center font-semibold">OSIS SMKN 56 JAKARTA</p>
+                <div class="brand-text">
+                    <div class="brand-name">Absensi Digital</div>
+                    <div class="brand-sub">OSIS &amp; MPK &middot; SMKN 56 Jakarta</div>
+                </div>
             </div>
-            
-            <div class="space-y-4">
-                <div>
-                    <label class="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Nama Lengkap</label>
-                    <input type="text" id="nama" class="input-field" placeholder="Masukkan nama Anda">
-                </div>
-                <div>
-                    <label class="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Sekretariat Bidang</label>
-                    <select id="sekbid" class="input-field">
-                        <option value="">Pilih Sekbid</option>
-                        <option value="Humas">Humas</option>
-                        <option value="Media dan Publikasi">Media dan Publikasi</option>
-                        <option value="Teknologi">Teknologi</option>
-                    </select>
-                </div>
-                <button id="btnLogin" class="btn-primary mt-4">Masuk ke Presensi</button>
+
+            <div class="field">
+                <label class="field-label" for="nama">Nama Lengkap</label>
+                <input type="text" id="nama" class="input-field" placeholder="Masukkan nama Anda" autocomplete="name">
             </div>
+            <div class="field">
+                <label class="field-label" for="sekbid">Jabatan / Sekbid</label>
+                <select id="sekbid" class="input-field">
+                    <option value="">Pilih Jabatan / Sekbid</option>
+                    <option value="Ketua OSIS">Ketua OSIS</option>
+                    <option value="Wakil Ketua OSIS">Wakil Ketua OSIS</option>
+                    <option value="Sekretaris">Sekretaris</option>
+                    <option value="Bendahara">Bendahara</option>
+                    <option value="Koordinator Sekbid">Koordinator Sekbid</option>
+                    <option value="Sekbid 1 Keagamaan dan Budi Pekerti Luhur">Sekbid 1 Keagamaan dan Budi Pekerti Luhur
+                    </option>
+                    <option value="Sekbid 2 Organisasi dan Olahraga">Sekbid 2 Organisasi dan Olahraga</option>
+                    <option value="Sekbid 3 Kewirausahaan">Sekbid 3 Kewirausahaan</option>
+                    <option value="Sekbid 4 Hubungan Masyarakat">Sekbid 4 Hubungan Masyarakat</option>
+                    <option value="Sekbid 5 Bela Negara dan Kehidupan Berbangsa">Sekbid 5 Bela Negara dan Kehidupan
+                        Berbangsa</option>
+                    <option value="Sekbid 6 Sastra dan Bahasa">Sekbid 6 Sastra dan Bahasa</option>
+                    <option value="Sekbid 7 Media Publikasi">Sekbid 7 Media Publikasi</option>
+                </select>
+            </div>
+            <button id="btnLogin" class="btn-primary">
+                <span>Masuk ke Presensi</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                    <polyline points="12 5 19 12 12 19" />
+                </svg>
+            </button>
         </div>
 
-        <div id="presence-step" class="hidden glass-card p-6 rounded-3xl shadow-2xl">
-            <h2 class="text-xl font-bold text-slate-800 mb-4 text-center">Ambil Presensi</h2>
-            
-            <div class="relative rounded-2xl overflow-hidden bg-black aspect-square mb-4 border-2 border-white shadow-md">
-                <video id="webcam" autoplay playsinline class="w-full h-full object-cover"></video>
+        <!-- STEP 2: PRESENSI -->
+        <div id="presence-step" class="hidden card">
+            <div class="section-header">
+                <div class="section-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                        <circle cx="12" cy="13" r="4" />
+                    </svg>
+                </div>
+                <div>
+                    <div class="section-title">Ambil Presensi</div>
+                    <div class="section-desc">Arahkan kamera ke wajah Anda</div>
+                </div>
+            </div>
+
+            <!-- Webcam -->
+            <div class="webcam-wrap">
+                <video id="webcam" autoplay playsinline></video>
                 <canvas id="canvas" class="hidden"></canvas>
+                <div class="webcam-corner webcam-corner-tl"></div>
+                <div class="webcam-corner webcam-corner-tr"></div>
+                <div class="webcam-corner webcam-corner-bl"></div>
+                <div class="webcam-corner webcam-corner-br"></div>
+                <div class="webcam-scan"></div>
             </div>
 
-            <div class="bg-blue-50 p-4 rounded-xl mb-4 text-center border border-blue-200">
-                <div class="flex items-center justify-between mb-2">
-                    <p class="text-[10px] text-blue-600 font-bold uppercase">📍 Status Lokasi</p>
-                    <button onclick="requestLocationPermission()" class="text-[10px] bg-blue-200 text-blue-700 px-2 py-1 rounded hover:bg-blue-300 font-semibold">Refresh</button>
+            <!-- Location -->
+            <div class="loc-panel">
+                <div class="loc-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                        <circle cx="12" cy="10" r="3" />
+                    </svg>
                 </div>
-                <p id="loc-info" class="text-[12px] text-blue-800 font-medium">🔄 Meminta izin lokasi...</p>
-                <p class="text-[10px] text-blue-600 mt-2">💡 Aktifkan Lokasi di pengaturan browser Anda jika ada permintaan</p>
+                <div class="loc-body">
+                    <div class="loc-top">
+                        <span class="loc-label">Status Lokasi</span>
+                        <button onclick="requestLocationPermission()" class="btn-refresh">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <polyline points="1 4 1 10 7 10" />
+                                <path d="M3.51 15a9 9 0 1 0 .49-3.01" />
+                            </svg>
+                            Refresh
+                        </button>
+                    </div>
+                    <div id="loc-info">Meminta izin lokasi...</div>
+                    <div class="loc-hint">Aktifkan lokasi di pengaturan browser jika diminta</div>
+                </div>
             </div>
 
-            <div class="bg-white/50 p-4 rounded-xl border border-slate-200 mb-4">
-                <label class="block text-xs font-bold text-slate-500 uppercase mb-3">Status Kehadiran</label>
-                <div class="flex justify-between gap-2">
-                    <label class="flex-1 flex items-center justify-center gap-2 p-2 rounded-lg border border-slate-200 cursor-pointer hover:bg-white transition">
-                        <input type="radio" name="status" value="Hadir" checked> <span class="text-sm">Hadir</span>
+            <!-- Status -->
+            <div class="status-panel">
+                <div class="status-panel-label">Status Kehadiran</div>
+                <div class="status-options">
+                    <label class="status-option">
+                        <input type="radio" name="status" value="Hadir" checked>
+                        <div class="status-option-label hadir">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" class="status-option-icon">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                                <polyline points="22 4 12 14.01 9 11.01" />
+                            </svg>
+                            <span class="status-option-text">Hadir</span>
+                        </div>
                     </label>
-                    <label class="flex-1 flex items-center justify-center gap-2 p-2 rounded-lg border border-slate-200 cursor-pointer hover:bg-white transition">
-                        <input type="radio" name="status" value="Izin"> <span class="text-sm">Izin</span>
+                    <label class="status-option">
+                        <input type="radio" name="status" value="Izin">
+                        <div class="status-option-label izin">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" class="status-option-icon">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                <polyline points="14 2 14 8 20 8" />
+                                <line x1="16" y1="13" x2="8" y2="13" />
+                                <line x1="16" y1="17" x2="8" y2="17" />
+                            </svg>
+                            <span class="status-option-text">Izin</span>
+                        </div>
                     </label>
-                    <label class="flex-1 flex items-center justify-center gap-2 p-2 rounded-lg border border-slate-200 cursor-pointer hover:bg-white transition">
-                        <input type="radio" name="status" value="Tidak Hadir"> <span class="text-sm">Absen</span>
+                    <label class="status-option">
+                        <input type="radio" name="status" value="Tidak Hadir">
+                        <div class="status-option-label absen">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" class="status-option-icon">
+                                <circle cx="12" cy="12" r="10" />
+                                <line x1="15" y1="9" x2="9" y2="15" />
+                                <line x1="9" y1="9" x2="15" y2="15" />
+                            </svg>
+                            <span class="status-option-text">Absen</span>
+                        </div>
                     </label>
                 </div>
-
-                <div id="alasan-container" class="hidden mt-4">
-                    <textarea id="alasan" class="w-full p-3 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Tuliskan alasan Anda di sini..."></textarea>
+                <div id="alasan-container" class="hidden">
+                    <textarea id="alasan" placeholder="Tulis alasan di sini..."></textarea>
                 </div>
             </div>
 
-            <button id="btnAbsen" class="btn-primary">Kirim Presensi</button>
+            <button id="btnAbsen" class="btn-primary">
+                <span>Kirim Presensi</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="22" y1="2" x2="11" y2="13" />
+                    <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                </svg>
+            </button>
         </div>
 
-        <div id="success-step" class="hidden glass-card p-10 rounded-3xl shadow-2xl text-center">
-            <div class="w-20 h-20 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">✔</div>
-            <h2 class="text-2xl font-bold text-slate-800">Berhasil!</h2>
-            <p class="text-slate-500 text-sm mt-2">Data Anda telah masuk ke database admin.</p>
-            <button onclick="location.reload()" class="mt-6 text-blue-600 font-bold">Kembali</button>
+        <!-- STEP 3: SUCCESS -->
+        <div id="success-step" class="hidden card">
+            <div class="success-icon-wrap">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12" />
+                </svg>
+            </div>
+            <p class="success-title">Presensi Berhasil!</p>
+            <p class="success-text">Data kehadiran Anda telah tercatat<br>di sistem database admin.</p>
+            <button onclick="location.reload()" class="btn-back">
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12" />
+                    <polyline points="12 19 5 12 12 5" />
+                </svg>
+                Kembali
+            </button>
         </div>
 
     </div>
 
     <script type="module" src="app.js"></script>
     <script>
-        // Register Service Worker
+        const msgs = ['Menginisialisasi...', 'Memuat konfigurasi...', 'Menghubungkan server...', 'Siap!'];
+        let i = 0;
+        const el = document.getElementById('ls-status');
+        setInterval(() => { if (++i < msgs.length && el) el.textContent = msgs[i]; }, 600);
+
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('service-worker.js')
-                    .then(registration => {
-                        console.log('Service Worker registered:', registration);
-                    })
-                    .catch(error => {
-                        console.log('Service Worker registration failed:', error);
-                    });
-            });
+            window.addEventListener('load', () => navigator.serviceWorker.register('service-worker.js').catch(() => { }));
         }
-
-        // Install prompt untuk add to home screen
-        let deferredPrompt;
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            
-            // Tampilkan tombol install (optional)
-            const installButton = document.getElementById('installButton');
-            if (installButton) {
-                installButton.style.display = 'block';
-                installButton.addEventListener('click', () => {
-                    deferredPrompt.prompt();
-                    deferredPrompt.userChoice.then((choiceResult) => {
-                        if (choiceResult.outcome === 'accepted') {
-                            console.log('User accepted the install prompt');
-                        }
-                        deferredPrompt = null;
-                    });
-                });
-            }
-        });
-
-        window.addEventListener('appinstalled', () => {
-            console.log('App installed successfully');
-            deferredPrompt = null;
-        });
     </script>
 </body>
+
 </html>

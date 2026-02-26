@@ -19,19 +19,20 @@ window.addEventListener('load', () => {
         const loadingScreen = document.getElementById('loading-screen');
         const appContainer = document.getElementById('app');
         if (loadingScreen && appContainer) {
-            loadingScreen.style.transition = 'opacity 0.4s ease-out';
-            loadingScreen.style.opacity = '0';
+            loadingScreen.classList.add('fade-out');
             setTimeout(() => {
                 loadingScreen.style.display = 'none';
-                appContainer.style.opacity = '1';
-            }, 400);
+                appContainer.classList.add('visible');
+            }, 600);
         }
-    }, 1200);
+    }, 2000);
 });
 
 const video = document.getElementById('webcam');
 const canvas = document.getElementById('canvas');
 let lat = "", long = "", accuracy = "", fullAddress = "";
+let isCameraActive = false;
+let isLocationActive = false;
 
 // --- FITUR BARU: AMBIL DAFTAR SEKBID DARI DATABASE ---
 async function loadSekbidFromDB() {
@@ -39,9 +40,9 @@ async function loadSekbidFromDB() {
     try {
         const snap = await getDocs(collection(db, "daftar_anggota"));
         let setSekbid = new Set();
-        
+
         snap.forEach(doc => setSekbid.add(doc.data().sekbid));
-        
+
         sekbidSelect.innerHTML = '<option value="">Pilih Sekbid</option>';
         setSekbid.forEach(s => {
             sekbidSelect.innerHTML += `<option value="${s}">${s}</option>`;
@@ -91,11 +92,13 @@ async function initCamera() {
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
         video.srcObject = stream;
-        
+        isCameraActive = true;
+
         // Request location permission with explicit prompt
         requestLocationPermission();
     } catch (e) {
-        alert("Mohon izinkan akses kamera! 📷");
+        isCameraActive = false;
+        alert("⚠️ Mohon izinkan akses kamera untuk melanjutkan presensi! 📷");
     }
 }
 
@@ -103,17 +106,29 @@ function requestLocationPermission() {
     const locInfoEl = document.getElementById('loc-info');
     locInfoEl.innerText = `📍 Meminta izin lokasi...`;
     locInfoEl.style.color = '#3b82f6';
-    
+
     // Retry logic untuk location request
     const attemptGetLocation = (retries = 3) => {
         navigator.geolocation.getCurrentPosition(
             async (position) => {
                 // SUCCESS: Location granted
                 try {
+                    // Check for Mock Location (Fake GPS)
+                    // Note: 'mocked' is available in some browser environments like Android WebView/Chrome
+                    if (position.mocked || (position.coords.accuracy < 1 && position.coords.accuracy > 0)) {
+                        isLocationActive = false;
+                        fullAddress = "❌ Fake GPS Terdeteksi!";
+                        locInfoEl.innerText = fullAddress;
+                        locInfoEl.style.color = '#ef4444';
+                        alert("⚠️ Fake GPS/Lokasi Tiruan terdeteksi! Mohon gunakan lokasi asli.");
+                        return;
+                    }
+
                     lat = position.coords.latitude;
                     long = position.coords.longitude;
                     accuracy = position.coords.accuracy;
-                    
+                    isLocationActive = true;
+
                     // Try to get address from coordinates
                     try {
                         const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${long}`, {
@@ -125,7 +140,7 @@ function requestLocationPermission() {
                         // Fallback to coordinates only
                         fullAddress = `${lat.toFixed(4)}, ${long.toFixed(4)}`;
                     }
-                    
+
                     locInfoEl.innerText = `✅ ${fullAddress}`;
                     locInfoEl.style.color = '#10b981';
                 } catch (e) {
@@ -137,11 +152,12 @@ function requestLocationPermission() {
             },
             (error) => {
                 // ERROR: Location permission denied or unavailable
+                isLocationActive = false;
                 console.error("Geolocation error code:", error.code, "Message:", error.message);
-                
+
                 let errorMsg = "Lokasi tidak terdeteksi";
                 let bgColor = '#ef4444';
-                
+
                 if (error.code === 1) { // PERMISSION_DENIED
                     errorMsg = "❌ Izin lokasi ditolak";
                     // Tunjukkan instruksi lebih detail
@@ -168,7 +184,7 @@ function requestLocationPermission() {
                         setTimeout(() => attemptGetLocation(retries - 1), 2000);
                     }
                 }
-                
+
                 fullAddress = errorMsg;
                 locInfoEl.innerText = errorMsg;
                 locInfoEl.style.color = bgColor;
@@ -180,7 +196,7 @@ function requestLocationPermission() {
             }
         );
     };
-    
+
     // Mulai dengan attempt kali pertama
     attemptGetLocation();
 }
@@ -189,24 +205,55 @@ function requestLocationPermission() {
 window.requestLocationPermission = requestLocationPermission;
 
 document.getElementById('btnAbsen').onclick = async () => {
+    // 1. Validasi Kamera
+    if (!isCameraActive) {
+        alert("⚠️ Kamera belum aktif atau izin ditolak! Mohon izinkan kamera untuk mengambil foto presensi.");
+        return;
+    }
+
+    // 2. Validasi Lokasi
+    if (!isLocationActive || !lat || !long) {
+        alert("⚠️ Lokasi belum terdeteksi! Pastikan GPS aktif dan izin lokasi diberikan.");
+        return;
+    }
+
     const status = document.querySelector('input[name="status"]:checked').value;
     const alasan = status === "Hadir" ? "-" : (document.getElementById('alasan')?.value || "");
     const btn = document.getElementById('btnAbsen');
 
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    canvas.getContext('2d').drawImage(video, 0, 0);
-    const photo = canvas.toDataURL('image/jpeg', 0.5);
+    try {
+        btn.disabled = true;
+        btn.innerText = "Mengirim...";
 
-    await addDoc(collection(db, "presensi_log"), {
-        nama: document.getElementById('nama').value,
-        sekbid: document.getElementById('sekbid').value,
-        status,
-        alasan: alasan,
-        waktu: new Date().toLocaleString('id-ID'),
-        lokasi: { lat, long, alamat: fullAddress },
-        foto: photo
-    });
-    document.getElementById('presence-step').classList.add('hidden');
-    document.getElementById('success-step').classList.remove('hidden');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+        const photo = canvas.toDataURL('image/jpeg', 0.5);
+
+        // Security check: ensure photo is not empty
+        if (photo.length < 1000) {
+            alert("⚠️ Gagal mengambil foto. Silakan coba lagi.");
+            btn.disabled = false;
+            btn.innerText = "Kirim Presensi";
+            return;
+        }
+
+        await addDoc(collection(db, "presensi_log"), {
+            nama: document.getElementById('nama').value,
+            sekbid: document.getElementById('sekbid').value,
+            status,
+            alasan: alasan,
+            waktu: new Date().toLocaleString('id-ID'),
+            lokasi: { lat, long, alamat: fullAddress, accuracy },
+            foto: photo
+        });
+
+        document.getElementById('presence-step').classList.add('hidden');
+        document.getElementById('success-step').classList.remove('hidden');
+    } catch (e) {
+        console.error("Submission error:", e);
+        alert("Gagal mengirim presensi: " + e.message);
+        btn.disabled = false;
+        btn.innerText = "Kirim Presensi";
+    }
 };

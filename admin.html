@@ -1,166 +1,1329 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - Sistem Monitoring Terpadu</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <meta name="theme-color" content="#0f0b1e">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Admin Absensi">
+    <link rel="apple-touch-icon" href="app-icon.png">
+    <link rel="icon" type="image/png" href="app-icon.png">
+    <link rel="manifest" href="manifest.json">
+    <title>Admin — Absensi OSIS SMKN 56</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; }
-        .tab-active { border-bottom: 3px solid #2563eb; color: #2563eb; }
-        .stats-card { transition: transform 0.2s; }
-        .stats-card:hover { transform: translateY(-5px); }
+        /* ── TOKENS ─────────────────────────── */
+        :root {
+            --font: 'Inter', system-ui, sans-serif;
+            --bg: #0f0b1e;
+            --surface: #1c1533;
+            --surface-2: #221b3a;
+            --border: rgba(255, 255, 255, 0.08);
+            --border-2: rgba(255, 255, 255, 0.14);
+            --violet: #7c3aed;
+            --violet-hover: #6d28d9;
+            --violet-pale: rgba(124, 58, 237, 0.15);
+            --violet-mid: rgba(124, 58, 237, 0.1);
+            --violet-light: #a78bfa;
+            --green: #34d399;
+            --green-bg: rgba(52, 211, 153, 0.1);
+            --green-bd: rgba(52, 211, 153, 0.2);
+            --blue: #60a5fa;
+            --blue-bg: rgba(96, 165, 250, 0.1);
+            --blue-bd: rgba(96, 165, 250, 0.2);
+            --red: #f87171;
+            --red-bg: rgba(248, 113, 113, 0.1);
+            --red-bd: rgba(248, 113, 113, 0.2);
+            --amber: #fbbf24;
+            --amber-bg: rgba(251, 191, 36, 0.1);
+            --ink-1: #f1eeff;
+            --ink-2: #b8adda;
+            --ink-3: #7c6fa0;
+            --ink-4: #4e4570;
+            --radius-xs: 4px;
+            --radius-sm: 8px;
+            --radius: 12px;
+            --radius-lg: 16px;
+            --radius-full: 9999px;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.5), 0 4px 8px rgba(0, 0, 0, 0.3);
+            --dur: 0.18s;
+            --ease: cubic-bezier(0.4, 0, 0.2, 1);
+            /* admin-specific aliases */
+            --indigo: var(--violet);
+            --indigo-hover: var(--violet-hover);
+            --indigo-pale: var(--violet-pale);
+        }
+
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            -webkit-text-size-adjust: 100%;
+        }
+
+        body {
+            font-family: var(--font);
+            background: var(--bg);
+            color: var(--ink-1);
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 70% 60% at 15% 10%, rgba(124, 58, 237, 0.15) 0%, transparent 60%),
+                radial-gradient(ellipse 50% 40% at 85% 85%, rgba(109, 40, 217, 0.1) 0%, transparent 60%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ── LAYOUT ──────────────────────────── */
+        .root {
+            display: flex;
+            min-height: 100vh;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ── SIDEBAR ─────────────────────────── */
+        .sidebar {
+            width: 228px;
+            flex-shrink: 0;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 1.25rem 0.75rem;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 0.625rem;
+            padding: 0.375rem 0.625rem 1.125rem;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 1rem;
+        }
+
+        .brand-logos {
+            display: flex;
+            gap: 0.35rem;
+            flex-shrink: 0;
+        }
+
+        .brand-logo {
+            width: 26px;
+            height: 26px;
+            object-fit: contain;
+        }
+
+        .brand-info {
+            min-width: 0;
+        }
+
+        .brand-name {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--ink-1);
+            letter-spacing: -0.2px;
+            line-height: 1.25;
+        }
+
+        .brand-sub {
+            font-size: 0.62rem;
+            color: var(--ink-3);
+            font-weight: 500;
+            margin-top: 0.1rem;
+        }
+
+        .nav {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.625rem;
+            padding: 0.55rem 0.75rem;
+            border-radius: var(--radius-sm);
+            border: none;
+            background: transparent;
+            color: var(--ink-2);
+            font-family: var(--font);
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--dur) var(--ease);
+            text-align: left;
+            width: 100%;
+        }
+
+        .nav-item:hover {
+            background: var(--surface-2);
+            color: var(--ink-1);
+        }
+
+        .nav-item.active {
+            background: rgba(124, 58, 237, 0.15);
+            color: var(--violet-light);
+        }
+
+        .nav-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            color: inherit;
+            background: transparent;
+        }
+
+        .nav-item.active .nav-icon {
+            background: rgba(124, 58, 237, 0.2);
+        }
+
+        /* ── MAIN ────────────────────────────── */
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        /* ── TOPBAR ──────────────────────────── */
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.5rem;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            gap: 1rem;
+            flex-wrap: wrap;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .topbar-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--ink-1);
+            letter-spacing: -0.3px;
+        }
+
+        .topbar-sub {
+            font-size: 0.72rem;
+            color: var(--ink-3);
+            font-weight: 500;
+            margin-top: 0.1rem;
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 0.625rem;
+            flex-wrap: wrap;
+        }
+
+        .period-wrap {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.45rem 0.75rem;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--ink-2);
+        }
+
+        .period-label {
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--ink-3);
+            white-space: nowrap;
+        }
+
+        .period-select {
+            background: transparent;
+            border: none;
+            outline: none;
+            font-family: var(--font);
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--indigo);
+            cursor: pointer;
+        }
+
+        .period-select option {
+            background: #fff;
+            color: var(--ink-1);
+        }
+
+        .btn-sm {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.45rem 0.875rem;
+            border-radius: var(--radius-sm);
+            font-family: var(--font);
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: all var(--dur) var(--ease);
+            letter-spacing: 0.1px;
+        }
+
+        .btn-export {
+            background: var(--green-bg);
+            border-color: var(--green-bd);
+            color: var(--green);
+        }
+
+        .btn-export:hover {
+            background: #dcfce7;
+        }
+
+        .btn-del {
+            background: var(--red-bg);
+            border-color: var(--red-bd);
+            color: var(--red);
+        }
+
+        .btn-del:hover {
+            background: #fee2e2;
+        }
+
+        /* ── CONTENT ─────────────────────────── */
+        .content {
+            padding: 1.5rem;
+            flex: 1;
+        }
+
+        /* ── STATS ───────────────────────────── */
+        #stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+            gap: 0.875rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1rem 1.125rem;
+            display: flex;
+            align-items: center;
+            gap: 0.875rem;
+            transition: box-shadow var(--dur) var(--ease), transform var(--dur) var(--ease);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .stat-card:hover {
+            box-shadow: var(--shadow);
+            transform: translateY(-1px);
+        }
+
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .si-indigo {
+            background: rgba(124, 58, 237, 0.15);
+            color: var(--violet-light);
+        }
+
+        .si-green {
+            background: var(--green-bg);
+            color: var(--green);
+        }
+
+        .si-blue {
+            background: var(--blue-bg);
+            color: var(--blue);
+        }
+
+        .si-red {
+            background: var(--red-bg);
+            color: var(--red);
+        }
+
+        .si-amber {
+            background: var(--amber-bg);
+            color: var(--amber);
+        }
+
+        .stat-info {
+            min-width: 0;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--ink-1);
+            letter-spacing: -0.5px;
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--ink-3);
+            margin-top: 0.2rem;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .stat-pct {
+            font-size: 0.67rem;
+            font-weight: 600;
+            color: var(--ink-4);
+            margin-top: 0.1rem;
+        }
+
+        .stat-pct b {
+            font-weight: 700;
+        }
+
+        .stat-divider {
+            grid-column: 1/-1;
+            font-size: 0.62rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--ink-4);
+            padding: 0.5rem 0 0.25rem;
+            border-top: 1px solid var(--border);
+            margin-top: 0.125rem;
+        }
+
+        /* ── TABS ────────────────────────────── */
+        .tabs {
+            display: flex;
+            gap: 0;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .tab-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.6rem 1rem;
+            font-family: var(--font);
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            color: var(--ink-3);
+            border-bottom: 2px solid transparent;
+            margin-bottom: -1px;
+            transition: all var(--dur) var(--ease);
+        }
+
+        .tab-btn:hover {
+            color: var(--ink-1);
+        }
+
+        .tab-btn.active {
+            color: var(--violet-light);
+            border-bottom-color: var(--violet);
+        }
+
+        /* ── TABLE ───────────────────────────── */
+        .tbl-wrap {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead tr {
+            background: var(--surface-2);
+            border-bottom: 1px solid var(--border);
+        }
+
+        thead th {
+            padding: 0.75rem 1rem;
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--ink-3);
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+            transition: background var(--dur);
+        }
+
+        tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        tbody tr:hover {
+            background: var(--surface-2);
+        }
+
+        tbody td {
+            padding: 0.75rem 1rem;
+            font-size: 0.825rem;
+            color: var(--ink-2);
+            vertical-align: middle;
+        }
+
+        .td-primary {
+            font-weight: 700;
+            color: var(--ink-1);
+            font-size: 0.85rem;
+        }
+
+        .td-meta {
+            font-size: 0.7rem;
+            color: var(--ink-3);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            font-weight: 600;
+            margin-top: 0.15rem;
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.2rem 0.55rem;
+            border-radius: var(--radius-full);
+            font-size: 0.68rem;
+            font-weight: 700;
+            border: 1px solid transparent;
+        }
+
+        .badge-green {
+            background: var(--green-bg);
+            border-color: var(--green-bd);
+            color: var(--green);
+        }
+
+        .badge-blue {
+            background: var(--blue-bg);
+            border-color: var(--blue-bd);
+            color: var(--blue);
+        }
+
+        .badge-red {
+            background: var(--red-bg);
+            border-color: var(--red-bd);
+            color: var(--red);
+        }
+
+        /* icon btn */
+        .btn-icon {
+            width: 30px;
+            height: 30px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--radius-xs);
+            border: 1px solid var(--border);
+            background: var(--surface);
+            cursor: pointer;
+            color: var(--ink-3);
+            transition: all var(--dur);
+        }
+
+        .btn-icon:hover {
+            background: var(--surface-2);
+            color: var(--ink-1);
+            border-color: var(--border-2);
+        }
+
+        .btn-icon-blue:hover {
+            background: var(--blue-bg);
+            border-color: var(--blue-bd);
+            color: var(--blue);
+        }
+
+        .btn-icon-red:hover {
+            background: var(--red-bg);
+            border-color: var(--red-bd);
+            color: var(--red);
+        }
+
+        .foto-thumb {
+            width: 36px;
+            height: 36px;
+            object-fit: cover;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            cursor: pointer;
+        }
+
+        /* number cells */
+        .num-green {
+            font-weight: 800;
+            color: var(--green);
+            font-size: 0.95rem;
+            text-align: center;
+        }
+
+        .num-blue {
+            font-weight: 800;
+            color: var(--blue);
+            font-size: 0.95rem;
+            text-align: center;
+        }
+
+        .num-red {
+            font-weight: 800;
+            color: var(--red);
+            font-size: 0.95rem;
+            text-align: center;
+        }
+
+        .num-ink {
+            font-weight: 900;
+            color: var(--ink-1);
+            font-size: 1rem;
+            text-align: center;
+        }
+
+        /* total row */
+        .total-row {
+            background: var(--indigo-pale) !important;
+            border-top: 2px solid rgba(79, 70, 229, 0.2) !important;
+        }
+
+        .total-row td {
+            font-weight: 800;
+        }
+
+        /* empty state */
+        .empty-state {
+            text-align: center;
+            padding: 2.5rem;
+            color: var(--ink-4);
+        }
+
+        .empty-state svg {
+            margin: 0 auto 0.5rem;
+            display: block;
+            opacity: 0.4;
+        }
+
+        .empty-state p {
+            font-size: 0.82rem;
+            font-weight: 500;
+        }
+
+        /* ── KELOLA ──────────────────────────── */
+        .add-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .add-card-title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--ink-1);
+            margin-bottom: 0.875rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .add-card-title::before {
+            content: '';
+            display: block;
+            width: 3px;
+            height: 14px;
+            background: var(--indigo);
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+
+        .add-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr auto;
+            gap: 0.625rem;
+            align-items: end;
+        }
+
+        .f-label {
+            display: block;
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: var(--ink-3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.3rem;
+        }
+
+        .f-input {
+            width: 100%;
+            height: 36px;
+            padding: 0 0.75rem;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            outline: none;
+            font-family: var(--font);
+            font-size: 0.82rem;
+            font-weight: 500;
+            color: var(--ink-1);
+            transition: border-color var(--dur), box-shadow var(--dur);
+            appearance: none;
+        }
+
+        .f-input::placeholder {
+            color: var(--ink-4);
+            font-weight: 400;
+        }
+
+        .f-input:focus {
+            border-color: var(--indigo);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+            background: #fff;
+        }
+
+        .search-bar {
+            margin: 1.25rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: var(--surface-2);
+            padding: 0 1rem;
+            height: 40px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            transition: all var(--dur) var(--ease);
+        }
+
+        .search-bar:focus-within {
+            border-color: var(--violet);
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+            background: var(--surface-3);
+        }
+
+        .search-bar input {
+            background: transparent;
+            border: none;
+            color: var(--ink-1);
+            font-family: var(--font);
+            font-size: 0.85rem;
+            outline: none;
+            width: 100%;
+        }
+
+        .btn-submit {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            height: 36px;
+            padding: 0 1rem;
+            background: var(--indigo);
+            color: #fff;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-family: var(--font);
+            font-size: 0.78rem;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background var(--dur);
+            box-shadow: 0 1px 2px rgba(79, 70, 229, 0.25), 0 3px 8px rgba(79, 70, 229, 0.18);
+        }
+
+        .btn-submit:hover {
+            background: var(--indigo-hover);
+        }
+
+        /* ── MODAL ───────────────────────────── */
+        #modal-edit {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.35);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            padding: 1rem;
+        }
+
+        .modal-box {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 1.75rem;
+            width: 100%;
+            max-width: 380px;
+            box-shadow: var(--shadow-md);
+            animation: modalIn 0.25s var(--ease);
+        }
+
+        @keyframes modalIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px) scale(0.97);
+            }
+
+            to {
+                opacity: 1;
+                transform: none;
+            }
+        }
+
+        .modal-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--ink-1);
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            letter-spacing: -0.2px;
+        }
+
+        .modal-field {
+            margin-bottom: 0.875rem;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 0.625rem;
+            margin-top: 1.25rem;
+        }
+
+        .btn-cancel {
+            flex: 1;
+            height: 38px;
+            padding: 0 1rem;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-family: var(--font);
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--ink-2);
+            cursor: pointer;
+            transition: all var(--dur);
+        }
+
+        .btn-cancel:hover {
+            background: var(--border);
+            color: var(--ink-1);
+        }
+
+        .btn-save {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.35rem;
+            height: 38px;
+            background: var(--indigo);
+            border: none;
+            border-radius: var(--radius-sm);
+            font-family: var(--font);
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: #fff;
+            cursor: pointer;
+            transition: background var(--dur);
+            box-shadow: 0 1px 2px rgba(79, 70, 229, 0.2);
+        }
+
+        .btn-save:hover {
+            background: var(--indigo-hover);
+        }
+
+        /* ── RESPONSIVE ──────────────────────── */
+        @media (max-width: 900px) {
+            .sidebar {
+                display: none;
+            }
+
+            .content {
+                padding: 1rem;
+            }
+
+            .topbar {
+                padding: 0.875rem 1rem;
+            }
+
+            .add-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 600px) {
+            #stats-container {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .tabs {
+                overflow-x: auto;
+            }
+
+            .tab-btn {
+                white-space: nowrap;
+            }
+
+            .topbar-right {
+                width: 100%;
+            }
+        }
+
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-2);
+            border-radius: var(--radius-full);
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--ink-4);
+        }
+
+        .hidden {
+            display: none !important;
+        }
     </style>
 </head>
-<body class="p-4 md:p-8">
 
-    <div class="max-w-7xl mx-auto">
-       <header class="mb-8 flex flex-col items-center text-center gap-4">
-    <div class="flex items-center justify-center gap-8">
-        <img src="Logo MPK rev..png" alt="Logo MPK" class="w-28 h-28 object-contain drop-shadow-lg hover:scale-110 transition-transform duration-300">
-        <img src="Logo OSIS rev. (1).png" alt="Logo OSIS" class="w-28 h-28 object-contain drop-shadow-lg hover:scale-110 transition-transform duration-300">
-    </div>
-    <div>
-        <h1 class="text-3xl font-extrabold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent tracking-tight">Admin Dashboard</h1>
-        <p class="text-slate-500 font-medium">Pantau kehadiran, statistik bidang, dan kelola anggota.</p>
-    </div>
-    
-    <div class="flex flex-wrap items-center gap-3">
-        <div class="flex items-center gap-3 bg-white p-2 rounded-2xl shadow-sm border border-slate-200">
-            <span class="text-xs font-bold text-slate-400 pl-2 uppercase">Periode:</span>
-            <select id="filter-bulan" class="p-2 pr-8 border-none outline-none bg-transparent text-sm font-bold text-blue-600 cursor-pointer">
-                <option value="Semua">Semua Bulan</option>
-                <option value="1">Januari</option><option value="2">Februari</option><option value="3">Maret</option>
-                <option value="4">April</option><option value="5">Mei</option><option value="6">Juni</option>
-                <option value="7">Juli</option><option value="8">Agustus</option><option value="9">September</option>
-                <option value="10">Oktober</option><option value="11">November</option><option value="12">Desember</option>
-            </select>
-        </div>
+<body>
 
-        <button id="btnExcelUnduh" class="flex items-center gap-2 bg-green-50 text-green-600 px-4 py-3 rounded-2xl text-xs font-bold transition-all border border-green-100 hover:bg-green-600 hover:text-white group">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v12m0 0l-3-3m3 3l3-3M3 12a9 9 0 1118 0 9 9 0 01-18 0z" />
-            </svg>
-            Unduh Excel
-        </button>
+    <!-- SVG Icons sprite -->
+    <svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+        <symbol id="icon-bar-chart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="20" x2="18" y2="10" />
+            <line x1="12" y1="20" x2="12" y2="4" />
+            <line x1="6" y1="20" x2="6" y2="14" />
+        </symbol>
+        <symbol id="icon-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
+        </symbol>
+        <symbol id="icon-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+        </symbol>
+        <symbol id="icon-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3" />
+            <path
+                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+        </symbol>
+        <symbol id="icon-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+        </symbol>
+        <symbol id="icon-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6" />
+            <path d="M19 6l-.867 12.142A2 2 0 0 1 16.138 20H7.862a2 2 0 0 1-1.995-1.858L5 6" />
+            <path d="M10 11v6m4-6v6M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+        </symbol>
+        <symbol id="icon-edit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+        </symbol>
+        <symbol id="icon-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+        </symbol>
+        <symbol id="icon-save" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+            <polyline points="17 21 17 13 7 13 7 21" />
+            <polyline points="7 3 7 8 15 8" />
+        </symbol>
+        <symbol id="icon-check-circle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+            <polyline points="22 4 12 14.01 9 11.01" />
+        </symbol>
+        <symbol id="icon-file-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="16" y1="13" x2="8" y2="13" />
+            <line x1="16" y1="17" x2="8" y2="17" />
+        </symbol>
+        <symbol id="icon-x-circle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="15" y1="9" x2="9" y2="15" />
+            <line x1="9" y1="9" x2="15" y2="15" />
+        </symbol>
+        <symbol id="icon-calendar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+            <line x1="16" y1="2" x2="16" y2="6" />
+            <line x1="8" y1="2" x2="8" y2="6" />
+            <line x1="3" y1="10" x2="21" y2="10" />
+        </symbol>
+        <symbol id="icon-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </symbol>
+    </svg>
 
-        <button id="btnHapusMassal" class="flex items-center gap-2 bg-red-50 text-red-600 px-4 py-3 rounded-2xl text-xs font-bold transition-all border border-red-100 hover:bg-red-600 hover:text-white group">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
-            Hapus Data Bulan Ini
-        </button>
-    </div>
-</header>
+    <div class="root">
 
-        <div id="stats-container" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8"></div>
-
-        <div class="flex gap-8 mb-6 border-b border-slate-200">
-            <button id="tab-rekap" class="pb-3 font-bold tab-active transition-all text-slate-900">Rekap Aktivitas</button>
-            <button id="tab-individu" class="pb-3 font-bold text-slate-400 transition-all">Statistik Per Orang</button>
-            <button id="tab-kelola" class="pb-3 font-bold text-slate-400 transition-all">Kelola Anggota</button>
-        </div>
-
-        <div id="section-rekap" class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-            <div class="overflow-x-auto">
-                <table class="w-full text-left">
-                    <thead class="bg-slate-50 text-slate-400 text-[10px] uppercase font-bold tracking-widest">
-                        <tr>
-                            <th class="p-4">Anggota</th>
-                            <th class="p-4">Status & Alasan</th>
-                            <th class="p-4">Waktu & Lokasi</th>
-                            <th class="p-4">Bukti Foto</th>
-                            <th class="p-4 text-center">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody id="rekap-list" class="text-sm divide-y divide-slate-100 italic text-slate-400">
-                        <tr><td colspan="5" class="p-8 text-center">Memuat data...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <div id="section-individu" class="hidden bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-            <div class="overflow-x-auto">
-                <table class="w-full text-left">
-                    <thead class="bg-slate-50 text-slate-500 text-[10px] uppercase font-bold tracking-widest">
-                        <tr>
-                            <th class="p-4">Nama Lengkap</th>
-                            <th class="p-4">Sekbid</th>
-                            <th class="p-4 text-center text-green-600">Hadir</th>
-                            <th class="p-4 text-center text-blue-600">Izin</th>
-                            <th class="p-4 text-center text-red-500">Sakit/Absen</th>
-                            <th class="p-4 text-center bg-slate-100">Total Laporan</th>
-                        </tr>
-                    </thead>
-                    <tbody id="individu-list" class="text-sm divide-y divide-slate-100"></tbody>
-                </table>
-            </div>
-        </div>
-
-        <div id="section-kelola" class="hidden space-y-6">
-            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
-                <h3 class="font-bold mb-4 text-slate-800 flex items-center gap-2">
-                    <span class="w-2 h-6 bg-blue-600 rounded-full"></span> Tambah Anggota Baru
-                </h3>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <input type="text" id="add-nama" placeholder="Nama Lengkap" class="p-4 bg-slate-50 border-none rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 text-sm">
-                    <input type="text" id="add-sekbid" placeholder="Sekbid (Media, Humas, dll)" class="p-4 bg-slate-50 border-none rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 text-sm">
-                    <button id="btnTambah" class="bg-slate-900 text-white font-bold p-4 rounded-2xl hover:bg-slate-800 transition shadow-lg shadow-slate-200">Simpan Anggota</button>
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="brand-logos">
+                    <img src="Logo MPK rev..png" alt="MPK" class="brand-logo">
+                    <img src="Logo OSIS rev. (1).png" alt="OSIS" class="brand-logo">
+                </div>
+                <div class="brand-info">
+                    <div class="brand-name">Admin Panel</div>
+                    <div class="brand-sub">OSIS SMKN 56</div>
                 </div>
             </div>
+            <nav class="nav">
+                <button class="nav-item active" onclick="switchTab('rekap')">
+                    <div class="nav-icon">
+                        <svg width="15" height="15">
+                            <use href="#icon-bar-chart" />
+                        </svg>
+                    </div>
+                    Rekap Aktivitas
+                </button>
+                <button class="nav-item" onclick="switchTab('individu')">
+                    <div class="nav-icon">
+                        <svg width="15" height="15">
+                            <use href="#icon-users" />
+                        </svg>
+                    </div>
+                    Per Anggota
+                </button>
+                <button class="nav-item" onclick="switchTab('kelola')">
+                    <div class="nav-icon">
+                        <svg width="15" height="15">
+                            <use href="#icon-settings" />
+                        </svg>
+                    </div>
+                    Kelola Anggota
+                </button>
+            </nav>
+        </aside>
 
-            <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden text-sm">
-                <table class="w-full text-left">
-                    <thead class="bg-slate-50 font-bold text-slate-400 uppercase text-[10px] tracking-widest">
-                        <tr>
-                            <th class="p-4">Nama</th>
-                            <th class="p-4">Sekbid</th>
-                            <th class="p-4 text-center">Opsi Kelola</th>
-                        </tr>
-                    </thead>
-                    <tbody id="anggota-list" class="divide-y divide-slate-100"></tbody>
-                </table>
-            </div>
-        </div>
-    </div>
+        <!-- MAIN -->
+        <div class="main">
 
-    <!-- MODAL EDIT ANGGOTA -->
-    <div id="modal-edit" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-        <div class="bg-white rounded-3xl shadow-xl border border-slate-200 p-8 max-w-md w-full mx-4">
-            <h2 class="text-2xl font-bold text-slate-900 mb-6">Edit Anggota</h2>
-            <div class="space-y-4">
+            <!-- TOPBAR -->
+            <div class="topbar">
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 mb-2 uppercase">Nama Lengkap</label>
-                    <input type="text" id="edit-nama" placeholder="Nama Lengkap" class="w-full p-3 bg-slate-50 border-2 border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+                    <div class="topbar-title">Dashboard Absensi</div>
+                    <div class="topbar-sub">Rekap kehadiran anggota OSIS &amp; MPK</div>
                 </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 mb-2 uppercase">Sekbid</label>
-                    <input type="text" id="edit-sekbid" placeholder="Sekbid" class="w-full p-3 bg-slate-50 border-2 border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+                <div class="topbar-right">
+                    <div class="period-wrap">
+                        <svg width="12" height="12" style="color:var(--ink-3)">
+                            <use href="#icon-calendar" />
+                        </svg>
+                        <span class="period-label">Periode</span>
+                        <select id="filter-bulan" class="period-select">
+                            <option value="Semua">Semua</option>
+                            <option value="1">Januari</option>
+                            <option value="2">Februari</option>
+                            <option value="3">Maret</option>
+                            <option value="4">April</option>
+                            <option value="5">Mei</option>
+                            <option value="6">Juni</option>
+                            <option value="7">Juli</option>
+                            <option value="8">Agustus</option>
+                            <option value="9">September</option>
+                            <option value="10">Oktober</option>
+                            <option value="11">November</option>
+                            <option value="12">Desember</option>
+                        </select>
+                    </div>
+                    <button id="btnExcelUnduh" class="btn-sm btn-export">
+                        <svg width="13" height="13">
+                            <use href="#icon-download" />
+                        </svg>
+                        Unduh Excel
+                    </button>
+                    <button id="btnHapusMassal" class="btn-sm btn-del">
+                        <svg width="13" height="13">
+                            <use href="#icon-trash" />
+                        </svg>
+                        Hapus Bulan
+                    </button>
                 </div>
             </div>
-            <div class="flex gap-3 mt-8">
-                <button id="btn-cancel-edit" class="flex-1 px-4 py-3 bg-slate-100 text-slate-700 font-bold rounded-2xl hover:bg-slate-200 transition">Batal</button>
-                <button id="btn-save-edit" class="flex-1 px-4 py-3 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 transition">Simpan</button>
+
+            <!-- CONTENT -->
+            <div class="content">
+
+                <!-- Stats -->
+                <div id="stats-container"></div>
+
+                <!-- Tabs -->
+                <div class="tabs">
+                    <button id="tab-rekap" class="tab-btn active" onclick="switchTab('rekap')">
+                        <svg width="13" height="13">
+                            <use href="#icon-bar-chart" />
+                        </svg>
+                        Rekap Aktivitas
+                    </button>
+                    <button id="tab-individu" class="tab-btn" onclick="switchTab('individu')">
+                        <svg width="13" height="13">
+                            <use href="#icon-users" />
+                        </svg>
+                        Per Anggota
+                    </button>
+                    <button id="tab-kelola" class="tab-btn" onclick="switchTab('kelola')">
+                        <svg width="13" height="13">
+                            <use href="#icon-settings" />
+                        </svg>
+                        Kelola Anggota
+                    </button>
+                </div>
+
+                <!-- Rekap -->
+                <div id="section-rekap" class="tbl-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Anggota</th>
+                                <th>Status</th>
+                                <th>Waktu &amp; Lokasi</th>
+                                <th>Foto</th>
+                                <th style="text-align:center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rekap-list">
+                            <tr>
+                                <td colspan="5">
+                                    <div class="empty-state">
+                                        <svg width="32" height="32">
+                                            <use href="#icon-bar-chart" />
+                                        </svg>
+                                        <p>Memuat data...</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Individu -->
+                <div id="section-individu" class="hidden tbl-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th colspan="3">Anggota / Kategori</th>
+                                <th style="text-align:center;color:var(--green)">Hadir</th>
+                                <th style="text-align:center;color:var(--blue)">Izin</th>
+                                <th style="text-align:center;color:var(--red)">Absen</th>
+                                <th style="text-align:center">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="individu-list"></tbody>
+                    </table>
+                </div>
+
+                <!-- Kelola -->
+                <div id="section-kelola" class="hidden">
+                    <div class="add-card">
+                        <div class="add-card-title">Tambah Anggota Baru</div>
+                        <div class="add-row">
+                            <div>
+                                <label class="f-label">Nama Lengkap</label>
+                                <input type="text" id="add-nama" placeholder="Nama anggota" class="f-input">
+                            </div>
+                            <div>
+                                <label class="f-label">Jabatan / Sekbid</label>
+                                <select id="add-sekbid" class="f-input" style="cursor:pointer">
+                                    <option value="">Pilih Jabatan / Sekbid</option>
+                                    <option value="Ketua OSIS">Ketua OSIS</option>
+                                    <option value="Wakil Ketua OSIS">Wakil Ketua OSIS</option>
+                                    <option value="Sekretaris">Sekretaris</option>
+                                    <option value="Bendahara">Bendahara</option>
+                                    <option value="Koordinator Sekbid">Koordinator Sekbid</option>
+                                    <option value="Sekbid 1 Keagamaan dan Budi Pekerti Luhur">Sekbid 1 Keagamaan dan
+                                        Budi Pekerti Luhur</option>
+                                    <option value="Sekbid 2 Organisasi dan Olahraga">Sekbid 2 Organisasi dan Olahraga
+                                    </option>
+                                    <option value="Sekbid 3 Kewirausahaan">Sekbid 3 Kewirausahaan</option>
+                                    <option value="Sekbid 4 Hubungan Masyarakat">Sekbid 4 Hubungan Masyarakat</option>
+                                    <option value="Sekbid 5 Bela Negara dan Kehidupan Berbangsa">Sekbid 5 Bela Negara
+                                        dan Kehidupan Berbangsa</option>
+                                    <option value="Sekbid 6 Sastra dan Bahasa">Sekbid 6 Sastra dan Bahasa</option>
+                                    <option value="Sekbid 7 Media Publikasi">Sekbid 7 Media Publikasi</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="f-label" style="opacity:0">–</label>
+                                <button id="btnTambah" class="btn-submit">
+                                    <svg width="13" height="13">
+                                        <use href="#icon-plus" />
+                                    </svg>
+                                    Tambah
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="search-bar">
+                        <svg width="16" height="16" style="color: var(--ink-3); flex-shrink: 0;">
+                            <use href="#icon-search" />
+                        </svg>
+                        <input type="text" id="search-anggota" placeholder="Cari nama anggota...">
+                    </div>
+                    <div class="tbl-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Nama</th>
+                                    <th>Sekbid</th>
+                                    <th style="text-align:center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="anggota-list"></tbody>
+                        </table>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
 
-    <script type="module" src="admin.js"></script>
+    <!-- Modal Edit -->
+    <div id="modal-edit" class="hidden">
+        <div class="modal-box">
+            <div class="modal-title">
+                <svg width="16" height="16" style="color:var(--indigo)">
+                    <use href="#icon-edit" />
+                </svg>
+                Edit Anggota
+            </div>
+            <div class="modal-field">
+                <label class="f-label">Nama Lengkap</label>
+                <input type="text" id="edit-nama" placeholder="Nama anggota" class="f-input">
+            </div>
+            <div class="modal-field">
+                <label class="f-label">Jabatan / Sekbid</label>
+                <select id="edit-sekbid" class="f-input" style="cursor:pointer">
+                    <option value="">Pilih Jabatan / Sekbid</option>
+                    <option value="Ketua OSIS">Ketua OSIS</option>
+                    <option value="Wakil Ketua OSIS">Wakil Ketua OSIS</option>
+                    <option value="Sekretaris">Sekretaris</option>
+                    <option value="Bendahara">Bendahara</option>
+                    <option value="Koordinator Sekbid">Koordinator Sekbid</option>
+                    <option value="Sekbid 1 Keagamaan dan Budi Pekerti Luhur">Sekbid 1 Keagamaan dan Budi Pekerti Luhur
+                    </option>
+                    <option value="Sekbid 2 Organisasi dan Olahraga">Sekbid 2 Organisasi dan Olahraga</option>
+                    <option value="Sekbid 3 Kewirausahaan">Sekbid 3 Kewirausahaan</option>
+                    <option value="Sekbid 4 Hubungan Masyarakat">Sekbid 4 Hubungan Masyarakat</option>
+                    <option value="Sekbid 5 Bela Negara dan Kehidupan Berbangsa">Sekbid 5 Bela Negara dan Kehidupan
+                        Berbangsa</option>
+                    <option value="Sekbid 6 Sastra dan Bahasa">Sekbid 6 Sastra dan Bahasa</option>
+                    <option value="Sekbid 7 Media Publikasi">Sekbid 7 Media Publikasi</option>
+                </select>
+            </div>
+            <div class="modal-footer">
+                <button id="btn-cancel-edit" class="btn-cancel">Batal</button>
+                <button id="btn-save-edit" class="btn-save">
+                    <svg width="13" height="13">
+                        <use href="#icon-save" />
+                    </svg>
+                    Simpan
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // Register Service Worker
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('service-worker.js')
-                    .then(registration => {
-                        console.log('Service Worker registered:', registration);
-                    })
-                    .catch(error => {
-                        console.log('Service Worker registration failed:', error);
-                    });
+        function switchTab(tab) {
+            ['rekap', 'individu', 'kelola'].forEach(t => {
+                document.getElementById('section-' + t)?.classList.add('hidden');
+                document.getElementById('tab-' + t)?.classList.remove('active');
+            });
+            document.getElementById('section-' + tab)?.classList.remove('hidden');
+            document.getElementById('tab-' + tab)?.classList.add('active');
+            document.querySelectorAll('.nav-item').forEach((el, i) => {
+                el.classList.toggle('active', ['rekap', 'individu', 'kelola'][i] === tab);
             });
         }
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => navigator.serviceWorker.register('service-worker.js').catch(() => { }));
+        }
     </script>
+    <script type="module" src="admin.js"></script>
 </body>
+
 </html>
