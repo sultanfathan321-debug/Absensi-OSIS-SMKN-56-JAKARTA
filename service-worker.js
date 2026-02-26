@@ -1,5 +1,5 @@
 // Cache version - update this when deploying new updates
-const CACHE_VERSION = '1.0.0';
+const CACHE_VERSION = '1.0.1';
 const CACHE_NAME = `absensi-${CACHE_VERSION}`;
 const STATIC_CACHE = `absensi-static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `absensi-dynamic-${CACHE_VERSION}`;
