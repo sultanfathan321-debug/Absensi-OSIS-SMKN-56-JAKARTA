@@ -53,6 +53,9 @@ function loadDashboard(bulanFilter = "Semua") {
                         <div class="text-blue-500 truncate w-40 mt-0.5">${d.lokasi?.alamat || 'Tidak Terdeteksi'}</div>
                     </td>
                     <td class="p-4"><img src="${d.foto || ''}" class="w-12 h-12 rounded-xl object-cover border-2 border-white shadow-sm hover:scale-150 transition-all onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect fill=%22%23ddd%22 width=%22100%22 height=%22100%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-family=%22sans-serif%22 font-size=%2214%22 fill=%22%23999%22%3ENo Image%3C/text%3E%3C/svg%3E'"></td>
+                    <td class="p-4 text-center">
+                        <button data-log-id="${docSnap.id}" class="btn-hapus-rekap text-red-500 font-bold text-xs hover:underline">HAPUS</button>
+                    </td>
                 </tr>`;
 
                 // LOGIKA HITUNG
@@ -101,6 +104,8 @@ function loadDashboard(bulanFilter = "Semua") {
 }
 
 // --- MANAJEMEN ANGGOTA ---
+let currentEditId = null;
+
 onSnapshot(collection(db, "daftar_anggota"), (snap) => {
     listAnggota.innerHTML = "";
     snap.forEach(docSnap => {
@@ -111,7 +116,7 @@ onSnapshot(collection(db, "daftar_anggota"), (snap) => {
             <td class="p-4 font-bold text-slate-700">${d.nama}</td>
             <td class="p-4 text-slate-500">${d.sekbid}</td>
             <td class="p-4 text-center space-x-4">
-                <button data-id="${id}" data-sekbid="${d.sekbid}" class="btn-edit text-blue-600 font-bold text-xs hover:underline">EDIT</button>
+                <button data-id="${id}" data-nama="${d.nama}" data-sekbid="${d.sekbid}" class="btn-edit text-blue-600 font-bold text-xs hover:underline">EDIT</button>
                 <button data-id="${id}" class="btn-hapus text-red-500 font-bold text-xs hover:underline">HAPUS</button>
             </td>
         </tr>`;
@@ -136,9 +141,66 @@ document.addEventListener('click', async (e) => {
     }
     if (e.target.classList.contains('btn-edit')) {
         const id = e.target.getAttribute('data-id');
-        const sekbidLama = e.target.getAttribute('data-sekbid');
-        const baru = prompt("Ubah Sekbid menjadi:", sekbidLama);
-        if(baru && baru !== sekbidLama) await updateDoc(doc(db, "daftar_anggota", id), { sekbid: baru });
+        const nama = e.target.getAttribute('data-nama');
+        const sekbid = e.target.getAttribute('data-sekbid');
+        
+        currentEditId = id;
+        document.getElementById('edit-nama').value = nama;
+        document.getElementById('edit-sekbid').value = sekbid;
+        document.getElementById('modal-edit').classList.remove('hidden');
+    }
+});
+
+// MODAL EDIT HANDLER
+document.getElementById('btn-cancel-edit').onclick = () => {
+    document.getElementById('modal-edit').classList.add('hidden');
+    currentEditId = null;
+};
+
+document.getElementById('btn-save-edit').onclick = async () => {
+    if (!currentEditId) return;
+    
+    const namaBaru = document.getElementById('edit-nama').value.trim();
+    const sekbidBaru = document.getElementById('edit-sekbid').value.trim();
+    
+    if (!namaBaru || !sekbidBaru) {
+        alert("Nama dan Sekbid tidak boleh kosong!");
+        return;
+    }
+    
+    try {
+        await updateDoc(doc(db, "daftar_anggota", currentEditId), {
+            nama: namaBaru,
+            sekbid: sekbidBaru
+        });
+        document.getElementById('modal-edit').classList.add('hidden');
+        currentEditId = null;
+        alert("Data anggota berhasil diperbarui!");
+    } catch (error) {
+        alert("Gagal memperbarui data: " + error.message);
+    }
+};
+
+// CLOSE MODAL KETIKA KLIK DI LUAR
+document.getElementById('modal-edit').onclick = (e) => {
+    if (e.target.id === 'modal-edit') {
+        document.getElementById('modal-edit').classList.add('hidden');
+        currentEditId = null;
+    }
+};
+
+// EVENT DELEGATION UNTUK HAPUS REKAP SATUAN
+document.addEventListener('click', async (e) => {
+    if (e.target.classList.contains('btn-hapus-rekap')) {
+        const logId = e.target.getAttribute('data-log-id');
+        if(confirm("Hapus data presensi ini?")) {
+            try {
+                await deleteDoc(doc(db, "presensi_log", logId));
+                alert("✅ Data presensi berhasil dihapus!");
+            } catch (error) {
+                alert("❌ Gagal menghapus: " + error.message);
+            }
+        }
     }
 });
 

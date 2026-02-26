@@ -69,10 +69,14 @@ document.getElementById('btnLogin').onclick = async () => {
     btn.innerText = "Memverifikasi...";
     btn.disabled = true;
 
-    const q = query(collection(db, "daftar_anggota"), where("nama", "==", namaInput), where("sekbid", "==", sekbidInput));
+    // Query case-insensitive: ambil semua dengan sekbid yang sama, filter nama di JavaScript
+    const q = query(collection(db, "daftar_anggota"), where("sekbid", "==", sekbidInput));
     const snap = await getDocs(q);
 
-    if (snap.empty) {
+    // Cari nama dengan case-insensitive comparison
+    const ditemukan = snap.docs.some(doc => doc.data().nama.toLowerCase() === namaInput.toLowerCase());
+
+    if (!ditemukan) {
         alert("Nama/Sekbid tidak terdaftar!");
         btn.innerText = "Verifikasi & Masuk";
         btn.disabled = false;
